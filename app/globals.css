@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+:root {
+  /* surfaces */
+  --bg: #FBF9F6;
+  --surface: #FFFFFF;
+  --surface-sunk: #F4F1EC;
+  --border: #E5DFD6;
+  --border-strong: #CFC6B8;
+  /* text */
+  --text: #1C1917;
+  --text-muted: #6B6459;
+  --text-faint: #9A9187;
+  /* accent — deep teal */
+  --accent: #0E6B62;
+  --accent-hover: #0B5851;
+  --accent-soft: #E3F0EE;
+  --accent-text: #FFFFFF;
+  /* score semantics */
+  --score-0: #A8492F;
+  --score-0-soft: #FBEAE4;
+  --score-1: #6B6459;
+  --score-1-soft: #F1EEE9;
+  --score-2: #2F6B45;
+  --score-2-soft: #E6F1E9;
+  /* status */
+  --warn: #9A6410;
+  --warn-soft: #FDF2DF;
+  --danger: #A8322A;
+  --danger-soft: #FBE9E7;
+  /* theme badges — 4 Cs */
+  --craft: #7A4F9E;
+  --clarity: #1B6E9E;
+  --change: #B0722A;
+  --challenge: #A8492F;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgb(28 25 23 / 0.06);
+  --shadow-md: 0 4px 16px -4px rgb(28 25 23 / 0.10);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171614;
+    --surface: #201E1B;
+    --surface-sunk: #2A2724;
+    --border: #35312C;
+    --border-strong: #4A443D;
+    --text: #F2EFEA;
+    --text-muted: #A8A096;
+    --text-faint: #7A736A;
+    --accent: #4FB3A5;
+    --accent-hover: #6AC4B7;
+    --accent-soft: #14332F;
+    --accent-text: #0C1F1D;
+    --score-0: #E08A70; --score-0-soft: #3A211A;
+    --score-1: #A8A096; --score-1-soft: #2A2724;
+    --score-2: #7CC095; --score-2-soft: #1B2F22;
+    --warn: #E0B268; --warn-soft: #33270F;
+    --danger: #E08A82; --danger-soft: #331A17;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171614; --surface: #201E1B; --surface-sunk: #2A2724;
+  --border: #35312C; --border-strong: #4A443D;
+  --text: #F2EFEA; --text-muted: #A8A096; --text-faint: #7A736A;
+  --accent: #4FB3A5; --accent-hover: #6AC4B7; --accent-soft: #14332F; --accent-text: #0C1F1D;
+  --score-0: #E08A70; --score-0-soft: #3A211A;
+  --score-1: #A8A096; --score-1-soft: #2A2724;
+  --score-2: #7CC095; --score-2-soft: #1B2F22;
+  --warn: #E0B268; --warn-soft: #33270F;
+  --danger: #E08A82; --danger-soft: #331A17;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
