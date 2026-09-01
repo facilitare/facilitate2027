@@ -9,7 +9,7 @@ Status values: `todo` · `in progress` · `done` · `blocked`
 | Task | Status | Commit | Notes / blockers |
 |---|---|---|---|
 | T01 Project setup | done | e95d4ab | build+tsc pass, tokens light/dark ok |
-| T02 Database schema and migrations | todo | | |
+| T02 Database schema and migrations | done | a507749 | migrate idempotent, seed 12 synthetic + 4 live W1-013..016, constraints pass |
 | T03 Authentication and session | todo | | |
 | T04 Design system primitives | todo | | |
 | T05 CSV import | todo | | |
