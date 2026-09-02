@@ -1,22 +1,26 @@
 "use client";
 import { CRITERIA, type CriterionKey, type ScoreValue } from "@/lib/rubric";
 import { cn } from "@/lib/utils";
-import { useId } from "react";
+import { useId, useState } from "react";
 
 type Props = {
   criterion: CriterionKey;
   value: ScoreValue | null;
   noEvidence: boolean;
   onChange: (v: ScoreValue | null, noEvidence: boolean) => void;
+  defaultExpanded?: boolean;
 };
 
-export function ScoreControl({ criterion, value, noEvidence, onChange }: Props) {
+export function ScoreControl({ criterion, value, noEvidence, onChange, defaultExpanded }: Props) {
   const crit = CRITERIA.find((c) => c.key === criterion)!;
   const groupId = useId();
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
+  const showAnchor = expanded;
 
   function select(v: ScoreValue) {
     if (noEvidence) return;
     onChange(v, false);
+    if (!expanded) setExpanded(true);
   }
 
   function toggleNoEvidence(checked: boolean) {
@@ -40,9 +44,26 @@ export function ScoreControl({ criterion, value, noEvidence, onChange }: Props) 
 
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[14px] p-[18px] shadow-[var(--shadow-sm)]" onKeyDown={onKeyDown}>
-      <h3 className="text-[15px] font-semibold tracking-[-.01em]">{crit.title}</h3>
-      <p className="text-[12.5px] text-[var(--text-muted)] mt-1 mb-3">{crit.question}</p>
-      <div role="radiogroup" aria-labelledby={`${groupId}-label`} className={cn("flex flex-col gap-2", noEvidence && "opacity-55")}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <h3 className="text-[15px] font-semibold tracking-[-.01em]">{crit.title}</h3>
+          <p className="text-[12.5px] text-[var(--text-muted)] mt-1">{crit.question}</p>
+        </div>
+        <span className={cn("text-[11px] font-medium px-2 py-1 rounded-full border tabular-nums", value !== null ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-sunk)] border-[var(--border)] text-[var(--text-faint)]")}>
+          {value !== null ? `${value} / 2` : "— / 2"}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="mt-2 text-[12px] font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] flex items-center gap-1"
+        aria-expanded={expanded}
+        aria-controls={`${groupId}-rubric`}
+      >
+        {expanded ? "Hide rubric ▲" : "Show rubric ▾"}
+        <span className="text-[11px] text-[var(--text-faint)] font-normal">— {expanded ? "anchors visible" : "tap when scoring"}</span>
+      </button>
+      <div id={`${groupId}-rubric`} role="radiogroup" aria-labelledby={`${groupId}-label`} className={cn("flex flex-col gap-2 mt-3", noEvidence && "opacity-55")}>
         <span id={`${groupId}-label`} className="sr-only">{crit.title}</span>
         {[0, 1, 2].map((v) => {
           const isSelected = value === v && !noEvidence;
@@ -59,18 +80,20 @@ export function ScoreControl({ criterion, value, noEvidence, onChange }: Props) 
               disabled={noEvidence}
               onClick={() => select(v as ScoreValue)}
               className={cn(
-                "grid grid-cols-[26px_1fr] gap-[10px] text-left w-full bg-[var(--surface)] border border-[var(--border)] rounded-[10px] p-[11px] cursor-pointer transition-colors hover:border-[var(--border-strong)] focus-visible:outline-[2px] focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 min-h-[64px]",
-                isSelected && "border-[1.5px] p-[10.5px_11.5px]",
+                "grid grid-cols-[26px_1fr] gap-[10px] text-left w-full bg-[var(--surface)] border border-[var(--border)] rounded-[10px] cursor-pointer transition-colors hover:border-[var(--border-strong)] focus-visible:outline-[2px] focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2",
+                showAnchor ? "p-[11px] min-h-[64px]" : "p-[10px_11px] min-h-[48px]",
+                isSelected && "border-[1.5px]",
+                isSelected && (showAnchor ? "p-[10.5px_11.5px]" : "p-[9.5px_10.5px]"),
                 scoreClass
               )}
               style={{ opacity: noEvidence ? 0.55 : 1 }}
             >
-              <span className={cn("text-[19px] font-semibold tabular-nums leading-[1.15] text-[var(--text-faint)]", numColor, isSelected && "font-semibold")}>{v}</span>
-              <span>
-                <span className="text-[13px] font-semibold block">{v === 0 ? "Below standard" : v === 1 ? "Meets standard" : "Above standard"}</span>
-                <span className="text-[12.5px] leading-[1.45] text-[var(--text-muted)] block mt-0.5">{(crit.anchors as any)[v]}</span>
+              <span className={cn("text-[18px] font-semibold tabular-nums leading-[1.15] text-[var(--text-faint)]", numColor)}>{v}</span>
+              <span className="flex-1">
+                <span className="text-[13px] font-semibold block leading-[1.2]">{v === 0 ? "Below standard" : v === 1 ? "Meets standard" : "Above standard"}</span>
+                {showAnchor && <span className="text-[12.5px] leading-[1.45] text-[var(--text-muted)] block mt-0.5">{(crit.anchors as any)[v]}</span>}
               </span>
-              {isSelected && <span aria-hidden className="col-span-2 hidden">✓</span>}
+              {isSelected && showAnchor && <span aria-hidden className="col-span-2 hidden">✓</span>}
             </button>
           );
         })}
