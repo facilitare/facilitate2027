@@ -25,6 +25,7 @@ type PanelAssessment = {
 
 type PanelResponse = {
   application: { id: string; ref_code: string; wave_id: string; status: string; panel_discussion: string | null };
+  settings?: { iaf_bonus_mode: "additive" | "tiebreak" };
   assessments: PanelAssessment[];
   aggregates: {
     n: number;
@@ -468,7 +469,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
                   })}
                   {/* Total row */}
                   <tr style={{ background: "var(--surface-sunk)", fontWeight: 600 }}>
-                    <th style={{ padding: "12px 16px", textAlign: "left" }}>Total (0–8)</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left" }}>Total (0–8) <span style={{ fontWeight: 400, fontSize: 11, color: "var(--text-muted)", textTransform: "none" }}>({(data.settings?.iaf_bonus_mode ?? "additive")})</span></th>
                     {assessments.map((a) => {
                       const total = a.focus_score + a.content_score + a.interactivity_score + a.credibility_score;
                       return (
@@ -526,7 +527,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <span style={{ fontWeight: 600, fontSize: 14 }}>{a.evaluator_name}</span>
                       <span style={{ fontSize: 12, color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px", background: "var(--surface-sunk)" }}>
-                        {a.focus_score + a.content_score + a.interactivity_score + a.credibility_score} / 8
+                        {a.focus_score + a.content_score + a.interactivity_score + a.credibility_score} / {(data.settings?.iaf_bonus_mode ?? "additive") === "additive" ? 10 : 8} <span style={{ fontWeight: 400, fontSize: 10 }}>({data.settings?.iaf_bonus_mode ?? "additive"})</span>
                       </span>
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)" }}>

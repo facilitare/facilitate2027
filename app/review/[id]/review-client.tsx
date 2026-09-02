@@ -105,6 +105,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [app, setApp] = useState<Application | null>(null);
   const [sessionMinutes, setSessionMinutes] = useState(50);
+  const [iafBonusMode, setIafBonusMode] = useState<"additive" | "tiebreak">("additive");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -145,9 +146,11 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       const a: Assessment = j.assessment;
       const appl: Application = j.application;
       const mins = j.settings?.session_minutes ?? 50;
+      const mode = (j.settings?.iaf_bonus_mode === "tiebreak" ? "tiebreak" : "additive") as "additive" | "tiebreak";
       setAssessment(a);
       setApp(appl);
       setSessionMinutes(mins);
+      setIafBonusMode(mode);
       // Populate form
       setFocusScore(a.focus_score);
       setContentScore(a.content_score);
@@ -396,7 +399,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
             <div>Session Content: <strong>{contentScore ?? "—"}</strong></div>
             <div>Interactivity: <strong>{interScore ?? "—"}</strong></div>
             <div>Credibility: <strong>{credScore ?? "—"}</strong></div>
-            <div style={{ marginTop: 8, fontWeight: 600 }}>Total: {total} / 8</div>
+            <div style={{ marginTop: 8, fontWeight: 600 }}>Total: {total} / {iafBonusMode === "additive" ? 10 : 8} <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 12 }}>({iafBonusMode === "additive" ? "0–10 additive · including IAF bonus" : "0–8 tiebreak · IAF not in total"})</span></div>
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap" }}>
             <a href={`/review/${assessmentId}/compare`} style={{ background: "var(--accent)", color: "var(--accent-text)", padding: "10px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 500, fontSize: 14 }}>
@@ -770,7 +773,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       {!isRecused && !showSubmitted ? (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", boxShadow: "0 -4px 16px -4px rgb(28 25 23 / 0.10)", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", zIndex: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>Total: {hasAllScores ? total : "—"} / 8</span>
+            <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>Total: {hasAllScores ? total : "—"} / {iafBonusMode === "additive" ? 10 : 8} <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 11 }} title={iafBonusMode === "additive" ? "Additive: IAF standing adds to total (max 10)" : "Tiebreak: IAF standing only breaks ties (max 8)"}>({iafBonusMode})</span></span>
             <span style={{ fontSize: 12, color: "var(--text-faint)" }} aria-live="polite">{saving ? "Saving…" : savedAt ? `Saved ${savedAt}` : ""}</span>
             {submitError ? <span style={{ fontSize: 12, color: "var(--danger)" }}>{submitError}</span> : null}
           </div>

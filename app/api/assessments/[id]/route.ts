@@ -107,16 +107,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   };
   // Deliberately absent: q17_iaf_member, q18_iaf_qualification
 
-  // Settings: session_minutes
+  // Settings: session_minutes + iaf_bonus_mode
   let sessionMinutes = 50;
+  let iafBonusMode: "additive" | "tiebreak" = "additive";
   try {
     const s = await sql`select value from settings where key = 'session_minutes'`;
     const v = (s as any[])[0]?.value;
     if (v != null) sessionMinutes = typeof v === "number" ? v : Number(v);
     if (isNaN(sessionMinutes)) sessionMinutes = 50;
   } catch {}
+  try {
+    const r = await sql`select value from settings where key = 'iaf_bonus_mode'`;
+    const v = (r as any[])[0]?.value;
+    if (v != null) {
+      const parsed = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return v; } })() : v;
+      if (parsed === "additive" || parsed === "tiebreak") iafBonusMode = parsed;
+      else if (typeof parsed === "string" && (parsed === "additive" || parsed === "tiebreak")) iafBonusMode = parsed as any;
+    }
+  } catch {}
 
-  return Response.json({ assessment, application, settings: { session_minutes: sessionMinutes } }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ assessment, application, settings: { session_minutes: sessionMinutes, iaf_bonus_mode: iafBonusMode } }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

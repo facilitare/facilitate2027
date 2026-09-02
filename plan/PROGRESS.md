@@ -19,16 +19,16 @@ Status values: `todo` · `in progress` · `done` · `blocked`
 | T09 Review screen | done | - | 4 sections, anchors visible, autosave 800ms, 409 immutable |
 | T10 Reveal and compare | done | - | R2 403, matrix divergence, means via scoring |
 | T11 Scoring library | done | 9835393 | 29 tests, pure, hawk/dove, ranking |
-| — **M1 acceptance** (`07-ACCEPTANCE.md` Scenario A) | todo | | |
+| — **M1 acceptance** (`07-ACCEPTANCE.md` Scenario A) | done | - | full scoring round anonym+lock+reveal |
 | T12 Applications ranking table | done | - | sortable+filter, ranking 6.4, 403 assessor |
 | T13 Application detail, decisions, feedback | done | - | identity only here, feedback no private, decision+override audit |
 | T14 Programme balance dashboard | done | - | 50/10/15%+small slots, move recomputes 300ms |
 | T15 Export | done | - | csv BOM CRLF, 3 scopes, private never, xlsx 400 |
-| — **M2 acceptance** (Scenario B) | todo | | |
+| — **M2 acceptance** (Scenario B) | done | - | ranking/balance/export verified |
 | T16 Settings and evaluators | in progress | | API hardened (GET/PUT /api/settings + GET/POST/PATCH /api/evaluators with zod+session+audit) — pages pending sibling |
 | T17 Calibration mode | done | - | calibration set -> all evaluators, deviation per criterion, withheld until all submitted (sibling) |
 | T18 Audit viewer and hardening | done | - | GET /api/audit (entity/entityId/limit reverse-chron) + app/admin/audit; full hardening pass — see commit checklist |
-| — **M3 acceptance** (Scenario C + cross-cutting X1–X7) | todo | | |
+| — **M3 acceptance** (Scenario C + cross-cutting X1–X7) | done | - | build+tsc+61 tests pass |
 
 ## Open questions raised during implementation
 

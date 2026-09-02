@@ -70,6 +70,17 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
 
   const app = { ...appRow, wave_name: waveName };
 
+  // Settings for mode label (every total must state mode)
+  let iafBonusMode: "additive" | "tiebreak" = "additive";
+  try {
+    const r = await sql`select value from settings where key = 'iaf_bonus_mode'`;
+    const v = (r as any[])[0]?.value;
+    if (v != null) {
+      const parsed = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return v; } })() : v;
+      if (parsed === "additive" || parsed === "tiebreak") iafBonusMode = parsed;
+    }
+  } catch {}
+
   // Every assessment for this application (lead sees all, any state)
   const assessments = (await sql`
     select
@@ -135,7 +146,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </div>
 
         <div style={{ marginTop: 18 }}>
-          <DetailClient app={app as any} assessments={assessments as any} decisions={decisions as any} />
+          <DetailClient app={app as any} assessments={assessments as any} decisions={decisions as any} iafBonusMode={iafBonusMode} />
         </div>
       </main>
     </div>

@@ -125,10 +125,12 @@ export default function DetailClient({
   app,
   assessments,
   decisions,
+  iafBonusMode = "additive",
 }: {
   app: Application;
   assessments: Assessment[];
   decisions: PanelDecision[];
+  iafBonusMode?: "additive" | "tiebreak";
 }) {
   const submitted = useMemo(() => assessments.filter((a) => a.state === "submitted"), [assessments]);
 
@@ -225,7 +227,7 @@ export default function DetailClient({
         <div style={{ minWidth: 220 }}>
           <div style={{ fontSize: 11, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Mean total</div>
           <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>
-            {fmt(aggregates.mean_total)} <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>/ 8</span>
+            {fmt(aggregates.mean_total)} <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>/ 8 <span style={{ fontWeight: 400, fontSize: 11 }} title={iafBonusMode === "additive" ? "Additive: IAF standing adds to ranking total (max 10)" : "Tiebreak: IAF only breaks ties (max 8)"}>({iafBonusMode})</span></span>
             <span style={{ marginLeft: 8 }}>{qualityBadge(aggregates.qualityStatus)}</span>
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { verifySession, getClientIp } from "@/lib/auth";
+import { verifySession } from "@/lib/auth";
 import { getSql } from "@/lib/db/client";
-import { writeAudit } from "@/lib/audit";
+import { writeAudit, getClientIpFromRequest } from "@/lib/audit";
 
 function getToken(req: Request): string | null {
   const c = req.headers.get("cookie");
@@ -10,142 +10,204 @@ function getToken(req: Request): string | null {
   return m ? m[1] : null;
 }
 
-async function requireAuth(req: Request) {
+async function getSession(req: Request) {
   const token = getToken(req);
-  if (!token) return { error: Response.json({ error: "Not authenticated", code: "unauthorized" }, { status: 401 }) as Response };
-  const session = await verifySession(token);
-  if (!session || !session.authed || !session.evaluatorId) {
-    return { error: Response.json({ error: "Not authenticated", code: "unauthorized" }, { status: 401 }) as Response };
-  }
-  const sql = getSql();
-  const rows = (await sql`select id, name, role from evaluators where id = ${session.evaluatorId} and active = true`) as any[];
-  if (rows.length === 0) return { error: Response.json({ error: "Evaluator not found", code: "not_found" }, { status: 404 }) as Response };
-  return { evaluator: rows[0] as { id: string; name: string; role: string }, sql };
+  if (!token) return null;
+  const payload = await verifySession(token);
+  return payload;
 }
 
 async function requireLead(req: Request) {
-  const a = await requireAuth(req);
-  if ("error" in a) return a;
-  const { evaluator } = a as { evaluator: { id: string; name: string; role: string } };
-  if ((evaluator as any).role !== "lead") {
-    return { error: Response.json({ error: "Only leads can manage evaluators", code: "forbidden" }, { status: 403 }) as Response };
+  const payload = await getSession(req);
+  if (!payload || !payload.authed || !payload.evaluatorId) {
+    return { error: Response.json({ error: "Not authenticated", code: "unauthorized" }, { status: 401 }) } as const;
   }
-  return a;
+  const sql = getSql();
+  const rows = (await sql`select id, name, role from evaluators where id = ${payload.evaluatorId} and active = true`) as any[];
+  if (rows.length === 0) return { error: Response.json({ error: "Evaluator not found", code: "not_found" }, { status: 404 }) } as const;
+  const evaluator = rows[0] as { id: string; name: string; role: string };
+  if (evaluator.role !== "lead") {
+    return { error: Response.json({ error: "Lead access required", code: "forbidden" }, { status: 403 }) } as const;
+  }
+  return { evaluator, sql } as const;
 }
+
+const CreateBody = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().optional().nullable().or(z.literal("")),
+  role: z.enum(["assessor", "lead"]).default("assessor"),
+  active: z.boolean().optional(),
+});
+
+const PatchBody = z.object({
+  id: z.string().uuid(),
+  name: z.string().trim().min(1).max(120).optional(),
+  email: z.union([z.string().trim().email(), z.literal(""), z.null()]).optional(),
+  role: z.enum(["assessor", "lead"]).optional(),
+  active: z.boolean().optional(),
+});
 
 export async function GET(req: Request) {
-  const auth = await requireAuth(req);
-  if ("error" in auth) return auth.error;
-  const { sql } = auth as any;
-  const rows = (await sql`select id, name, email, role, active from evaluators order by name asc`) as any[];
+  const sql = getSql();
+  const url = new URL(req.url);
+  const includeInactive = url.searchParams.get("includeInactive") === "true" || url.searchParams.get("all") === "true";
+
+  // Public for /who flow: if no lead session, just return active
+  const payload = await getSession(req);
+  let isLead = false;
+  if (payload?.evaluatorId) {
+    try {
+      const rows = (await sql`select role from evaluators where id = ${payload.evaluatorId} and active = true`) as any[];
+      if (rows.length && rows[0].role === "lead") isLead = true;
+    } catch {}
+  }
+
+  // For leads with includeInactive=true, return all. Otherwise active only.
+  // Also if no query but caller is lead and wants all via page, page will pass ?includeInactive=true
+  let rows: any[];
+  if (isLead && includeInactive) {
+    rows = (await sql`select id, name, email, role, active, created_at from evaluators order by active desc, name asc`) as any[];
+  } else {
+    rows = (await sql`select id, name, email, role, active from evaluators where active = true order by name asc`) as any[];
+    // For non-lead, active only regardless of param
+    if (!isLead && includeInactive) {
+      rows = (await sql`select id, name, email, role, active from evaluators where active = true order by name asc`) as any[];
+    }
+  }
   return Response.json(rows, { headers: { "Cache-Control": "no-store" } });
 }
-
-const PostBody = z.object({
-  name: z.string().trim().min(1, "Name required").max(200),
-  email: z.string().trim().email("Valid email required").max(200),
-  role: z.enum(["assessor", "lead"]).default("assessor"),
-});
 
 export async function POST(req: Request) {
   const auth = await requireLead(req);
   if ("error" in auth) return auth.error;
-  const { evaluator, sql } = auth as { evaluator: { id: string; name: string; role: string }; sql: any };
+  const { evaluator, sql } = auth;
 
   let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON", code: "bad_request" }, { status: 400 });
+  try { body = await req.json(); } catch { return Response.json({ error: "Invalid JSON", code: "bad_request" }, { status: 400 }); }
+
+  const parsed = CreateBody.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid payload", code: "bad_request", details: parsed.error.flatten() }, { status: 400 });
   }
-  const parsed = PostBody.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.errors[0]?.message ?? "Invalid request", code: "bad_request" }, { status: 400 });
+  const data = parsed.data;
+  const emailRaw = data.email?.trim() ? data.email.trim() : null;
 
-  const { name, email, role } = parsed.data;
-  const existing = (await sql`select id from evaluators where lower(email) = lower(${email}) limit 1`) as any[];
-  if (existing.length > 0) return Response.json({ error: "Email already exists", code: "conflict" }, { status: 409 });
+  // Unique email check
+  if (emailRaw) {
+    const existing = (await sql`select id from evaluators where email = ${emailRaw} limit 1`) as any[];
+    if (existing.length) return Response.json({ error: "Email already in use", code: "conflict" }, { status: 409 });
+  }
 
-  const inserted = (await sql`insert into evaluators (name, email, role, active) values (${name}, ${email}, ${role}, true) returning id, name, email, role, active`) as any[];
-  const created = inserted[0];
+  let inserted: any[];
+  try {
+    inserted = (await sql`insert into evaluators (name, email, role, active) values (${data.name.trim()}, ${emailRaw}, ${data.role}, ${data.active ?? true}) returning id, name, email, role, active, created_at`) as any[];
+  } catch (e: any) {
+    return Response.json({ error: "Failed to create evaluator", code: "server_error", detail: String(e?.message ?? e) }, { status: 500 });
+  }
+  const row = inserted[0];
 
-  const ip = getClientIp(req);
-  await writeAudit({
-    actorId: evaluator.id,
-    actorName: evaluator.name,
-    action: "evaluator.create",
-    entity: "evaluator",
-    entityId: created.id,
-    payload: { name, email, role },
-    ip,
-  });
+  try {
+    await writeAudit({
+      actorId: evaluator.id,
+      actorName: evaluator.name,
+      action: "evaluator.create",
+      entity: "evaluator",
+      entityId: row.id,
+      payload: { name: row.name, email: row.email, role: row.role },
+      ip: getClientIpFromRequest(req),
+    });
+  } catch {}
 
-  return Response.json(created, { status: 201 });
+  return Response.json(row, { status: 201 });
 }
-
-// PATCH /api/evaluators? Support body { id, active?, name?, email?, role? }
-const PatchBody = z
-  .object({
-    id: z.string().uuid("Valid evaluator id required"),
-    name: z.string().trim().min(1).max(200).optional(),
-    email: z.string().trim().email().max(200).optional(),
-    role: z.enum(["assessor", "lead"]).optional(),
-    active: z.boolean().optional(),
-  })
-  .refine((o) => o.name !== undefined || o.email !== undefined || o.role !== undefined || o.active !== undefined, {
-    message: "At least one field to update is required",
-  });
 
 export async function PATCH(req: Request) {
   const auth = await requireLead(req);
   if ("error" in auth) return auth.error;
-  const { evaluator, sql } = auth as { evaluator: { id: string; name: string; role: string }; sql: any };
+  const { evaluator, sql } = auth;
 
   let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON", code: "bad_request" }, { status: 400 });
-  }
+  try { body = await req.json(); } catch { return Response.json({ error: "Invalid JSON", code: "bad_request" }, { status: 400 }); }
+
   const parsed = PatchBody.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.errors[0]?.message ?? "Invalid request", code: "bad_request" }, { status: 400 });
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid payload", code: "bad_request", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const data = parsed.data;
 
-  const { id, name, email, role, active } = parsed.data;
-  const existingRows = (await sql`select id, name, email, role, active from evaluators where id = ${id} limit 1`) as any[];
+  const existingRows = (await sql`select id, name, email, role, active from evaluators where id = ${data.id} limit 1`) as any[];
   if (existingRows.length === 0) return Response.json({ error: "Evaluator not found", code: "not_found" }, { status: 404 });
-  const old = existingRows[0];
+  const existing = existingRows[0] as { id: string; name: string; email: string | null; role: string; active: boolean };
 
-  // Prevent deactivating the last lead? Not enforced, just audit
-  if (email && email.toLowerCase() !== old.email.toLowerCase()) {
-    const dup = (await sql`select id from evaluators where lower(email) = lower(${email}) and id != ${id} limit 1`) as any[];
-    if (dup.length > 0) return Response.json({ error: "Email already exists", code: "conflict" }, { status: 409 });
+  const updates: Record<string, unknown> = {};
+  let emailToCheck: string | null | undefined = undefined;
+  if (data.name !== undefined) updates.name = data.name.trim();
+  if (data.email !== undefined) {
+    const trimmed = data.email && data.email.trim() !== "" ? data.email.trim() : null;
+    updates.email = trimmed;
+    emailToCheck = trimmed;
+  }
+  if (data.role !== undefined) updates.role = data.role;
+  if (data.active !== undefined) updates.active = data.active;
+
+  if (Object.keys(updates).length === 0) {
+    return Response.json({ error: "No fields to update", code: "bad_request" }, { status: 400 });
   }
 
-  // Build update — explicit columns, no star
-  if (name !== undefined) await sql`update evaluators set name = ${name} where id = ${id}`;
-  if (email !== undefined) await sql`update evaluators set email = ${email} where id = ${id}`;
-  if (role !== undefined) await sql`update evaluators set role = ${role} where id = ${id}`;
-  if (active !== undefined) await sql`update evaluators set active = ${active} where id = ${id}`;
+  // Email uniqueness if changing
+  if (emailToCheck !== undefined && emailToCheck !== null) {
+    const dup = (await sql`select id from evaluators where email = ${emailToCheck} and id != ${data.id} limit 1`) as any[];
+    if (dup.length) return Response.json({ error: "Email already in use", code: "conflict" }, { status: 409 });
+  }
 
-  const updatedRows = (await sql`select id, name, email, role, active from evaluators where id = ${id} limit 1`) as any[];
+  // Prevent deactivating the actor themselves? Allow but warn — not forbidden. Just allow.
+  // Also ensure at least one active lead remains if deactivating a lead
+  if (updates.active === false && existing.role === "lead") {
+    const leadCount = (await sql`select count(*)::int as c from evaluators where role = 'lead' and active = true and id != ${data.id}`) as any[];
+    if (leadCount[0].c === 0) {
+      return Response.json({ error: "Cannot deactivate the last active lead", code: "bad_request" }, { status: 400 });
+    }
+  }
+
+  // Build audit payload old/new
+  const auditPayload: Record<string, { from: unknown; to: unknown }> = {};
+  for (const k of Object.keys(updates)) {
+    const oldVal = (existing as any)[k];
+    const newVal = (updates as any)[k];
+    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+      auditPayload[k] = { from: oldVal, to: newVal };
+    }
+  }
+
+  // Perform update — use separate statements per field type to avoid dynamic SQL complexity
+  try {
+    if (updates.name !== undefined) await sql`update evaluators set name = ${updates.name as string} where id = ${data.id}`;
+    if (updates.email !== undefined) await sql`update evaluators set email = ${updates.email as string | null} where id = ${data.id}`;
+    if (updates.role !== undefined) await sql`update evaluators set role = ${updates.role as string} where id = ${data.id}`;
+    if (updates.active !== undefined) await sql`update evaluators set active = ${updates.active as boolean} where id = ${data.id}`;
+  } catch (e: any) {
+    return Response.json({ error: "Failed to update evaluator", code: "server_error", detail: String(e?.message ?? e) }, { status: 500 });
+  }
+
+  const updatedRows = (await sql`select id, name, email, role, active, created_at from evaluators where id = ${data.id} limit 1`) as any[];
   const updated = updatedRows[0];
 
-  const payload: Record<string, unknown> = {};
-  if (name !== undefined) payload.name = { from: old.name, to: name };
-  if (email !== undefined) payload.email = { from: old.email, to: email };
-  if (role !== undefined) payload.role = { from: old.role, to: role };
-  if (active !== undefined) payload.active = { from: old.active, to: active };
-
-  const ip = getClientIp(req);
-  const action = active === false ? "evaluator.deactivate" : "evaluator.update";
-  await writeAudit({
-    actorId: evaluator.id,
-    actorName: evaluator.name,
-    action,
-    entity: "evaluator",
-    entityId: id,
-    payload: { changes: payload, old, updated },
-    ip,
-  });
+  const action = updates.active === false ? "evaluator.deactivate" : updates.active === true ? "evaluator.reactivate" : "evaluator.update";
+  try {
+    await writeAudit({
+      actorId: evaluator.id,
+      actorName: evaluator.name,
+      action,
+      entity: "evaluator",
+      entityId: data.id,
+      payload: { changes: auditPayload, after: { name: updated.name, email: updated.email, role: updated.role, active: updated.active } },
+      ip: getClientIpFromRequest(req),
+    });
+  } catch {}
 
   return Response.json(updated);
+}
+
+export async function DELETE() {
+  return Response.json({ error: "Evaluators cannot be deleted — deactivate instead (set active=false)", code: "bad_request" }, { status: 400 });
 }

@@ -102,6 +102,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   }));
   const aggregates = computeAggregates(scoringInputs);
 
+  // Settings: iaf_bonus_mode for label
+  let iafBonusMode: "additive" | "tiebreak" = "additive";
+  try {
+    const r = await sql`select value from settings where key = 'iaf_bonus_mode'`;
+    const v = (r as any[])[0]?.value;
+    if (v != null) {
+      const parsed = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return v; } })() : v;
+      if (parsed === "additive" || parsed === "tiebreak") iafBonusMode = parsed;
+    }
+  } catch {}
+
   return Response.json(
     {
       application: {
@@ -111,6 +122,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         status: app.status,
         panel_discussion: app.panel_discussion ?? null,
       },
+      settings: { iaf_bonus_mode: iafBonusMode },
       assessments: assessments.map((a: any) => ({
         id: a.id,
         evaluator_id: a.evaluator_id,
@@ -245,6 +257,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }));
   const aggregates = computeAggregates(scoringInputs2);
 
+  let iafBonusModePost: "additive" | "tiebreak" = "additive";
+  try {
+    const r = await sql`select value from settings where key = 'iaf_bonus_mode'`;
+    const v = (r as any[])[0]?.value;
+    if (v != null) {
+      const parsed = typeof v === "string" ? (() => { try { return JSON.parse(v); } catch { return v; } })() : v;
+      if (parsed === "additive" || parsed === "tiebreak") iafBonusModePost = parsed;
+    }
+  } catch {}
   return Response.json(
     {
       application: {
@@ -254,6 +275,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         status: (appRows[0] as any).status,
         panel_discussion: newDiscussion,
       },
+      settings: { iaf_bonus_mode: iafBonusModePost },
       assessments: assessments.map((a: any) => ({
         id: a.id,
         evaluator_id: a.evaluator_id,
