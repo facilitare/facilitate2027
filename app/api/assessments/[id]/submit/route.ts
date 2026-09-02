@@ -1,6 +1,9 @@
+import { z } from "zod";
 import { verifySession } from "@/lib/auth";
 import { getSql } from "@/lib/db/client";
 import { writeAudit } from "@/lib/audit";
+
+const BodySchema = z.object({}).passthrough();
 
 function getSessionFromRequest(req: Request): string | null {
   const cookie = req.headers.get("cookie");
@@ -34,6 +37,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   if (a.state === "submitted") return Response.json({ error: "Already submitted — immutable", code: "conflict" }, { status: 409 });
   if (a.state === "recused") return Response.json({ error: "Already recused", code: "conflict" }, { status: 409 });
+
+  // zod validation for body (no required fields, but validates JSON shape)
+  let rawBody: unknown = {};
+  try {
+    const text = await req.text();
+    if (text) rawBody = JSON.parse(text);
+  } catch {
+    return Response.json({ error: "Invalid JSON", code: "bad_request" }, { status: 400 });
+  }
+  const bodyParsed = BodySchema.safeParse(rawBody);
+  if (!bodyParsed.success) return Response.json({ error: "Invalid request", code: "bad_request" }, { status: 400 });
 
   // Validate completeness
   const missing: string[] = [];

@@ -25,9 +25,9 @@ Status values: `todo` · `in progress` · `done` · `blocked`
 | T14 Programme balance dashboard | done | - | 50/10/15%+small slots, move recomputes 300ms |
 | T15 Export | done | - | csv BOM CRLF, 3 scopes, private never, xlsx 400 |
 | — **M2 acceptance** (Scenario B) | todo | | |
-| T16 Settings and evaluators | todo | | |
-| T17 Calibration mode | todo | | |
-| T18 Audit viewer and hardening | todo | | |
+| T16 Settings and evaluators | in progress | | API hardened (GET/PUT /api/settings + GET/POST/PATCH /api/evaluators with zod+session+audit) — pages pending sibling |
+| T17 Calibration mode | done | - | calibration set -> all evaluators, deviation per criterion, withheld until all submitted (sibling) |
+| T18 Audit viewer and hardening | done | - | GET /api/audit (entity/entityId/limit reverse-chron) + app/admin/audit; full hardening pass — see commit checklist |
 | — **M3 acceptance** (Scenario C + cross-cutting X1–X7) | todo | | |
 
 ## Open questions raised during implementation
