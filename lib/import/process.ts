@@ -21,6 +21,10 @@ export interface ProcessOptions {
   waveNumber: number;
   csvText: string;
   doCommit: boolean;
+  mappingOverride?: Record<string, string | null>;
+  actorId?: string | null;
+  actorName?: string | null;
+  ip?: string | null;
 }
 
 function parseCSV(csvText: string): { headers: string[]; rows: Record<string, string>[] } {
@@ -43,7 +47,38 @@ function parseCSV(csvText: string): { headers: string[]; rows: Record<string, st
 export async function processImport(opts: ProcessOptions): Promise<ImportReport> {
   const sql = getSql();
   const { headers, rows } = parseCSV(opts.csvText);
-  const mapping = mapHeaders(headers);
+  // Build mapping, applying manual override if provided
+  let mapping = mapHeaders(headers);
+  if (opts.mappingOverride) {
+    // Rebuild mapping from override: field -> header (header must exist in CSV or be null to unmap)
+    // Override keys are FieldKey strings, values are header string or null/""
+    const fieldToHeader = new Map<string, string>();
+    const headerToField = new Map<string, string>();
+    const override = opts.mappingOverride;
+    // First, for each override entry with non-empty header that exists in CSV, use it
+    const usedHeaders = new Set<string>();
+    for (const [field, header] of Object.entries(override)) {
+      if (header && typeof header === "string" && header.trim() !== "" && headers.includes(header)) {
+        fieldToHeader.set(field as any, header);
+        headerToField.set(header, field as any);
+        usedHeaders.add(header);
+      }
+    }
+    // For fields not overridden, keep auto mapping if header not already used
+    for (const [field, header] of mapping.fieldToHeader.entries()) {
+      if (!fieldToHeader.has(field as string) && !usedHeaders.has(header)) {
+        // Check if this field was explicitly set to null in override -> skip
+        if (override.hasOwnProperty(field) && (override[field as string] === null || override[field as string] === "")) {
+          continue;
+        }
+        fieldToHeader.set(field as any, header);
+        headerToField.set(header, field as any);
+        usedHeaders.add(header);
+      }
+    }
+    const unmappedHeaders = headers.filter((h) => h.trim() !== "" && !usedHeaders.has(h));
+    mapping = { fieldToHeader: fieldToHeader as any, headerToField: headerToField as any, unmappedHeaders };
+  }
   const rowsRead = rows.length;
 
   const duplicates: ImportReport["duplicates"] = [];
@@ -234,7 +269,7 @@ export async function processImport(opts: ProcessOptions): Promise<ImportReport>
     // Audit log
     // Need actor - we don't have actor here; caller should insert audit. We insert generic via sql if possible
     // We'll leave audit to route handler (it has session). Insert placeholder with actor null
-    await sql`insert into audit_log (actor_id, actor_name, action, entity, entity_id, payload) values (null, 'import', 'import.commit', 'wave', ${opts.waveId}, ${JSON.stringify({ batch: batchId, imported: importedCount, refs: refCodes }) as any})`;
+    await sql`insert into audit_log (actor_id, actor_name, action, entity, entity_id, payload) values (${opts.actorId ?? null}, ${opts.actorName ?? 'import'}, ${opts.doCommit ? 'import.commit' : 'import.dry_run'}, 'wave', ${opts.waveId}, ${JSON.stringify({ batch: batchId, imported: importedCount, refs: refCodes }) as any})`;
   }
 
   return {

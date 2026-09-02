@@ -12,13 +12,13 @@ Status values: `todo` · `in progress` · `done` · `blocked`
 | T02 Database schema and migrations | done | a507749 | migrate idempotent, seed 12 synthetic + 4 live W1-013..016, constraints pass |
 | T03 Authentication and session | done | c6d661b | login->who->app, rate limit 429, lead admin pw, tamper 401, logout clear, middleware redirect |
 | T04 Design system primitives | done | ee88c89 | /styleguide renders all states, ScoreControl keyboard + no_evidence, contrast AA |
-| T05 CSV import | todo | | |
-| T06 Anonymity layer | todo | | |
-| T07 Assignment engine | todo | | |
-| T08 Assessor dashboard | todo | | |
-| T09 Review screen | todo | | |
-| T10 Reveal and compare | todo | | |
-| T11 Scoring library | todo | | |
+| T05 CSV import | done | 9835393 | dry-run/commit, fuzzy 40chars, dedupe, anon scan, fixture 12 rows |
+| T06 Anonymity layer | done | 9835393 | R1 allow-list, leak scan, round1 403, redact/dismiss audit |
+| T07 Assignment engine | done | 9835393 | auto 3/6 greedy deterministic, load spread |
+| T08 Assessor dashboard | done | - | queue + Start next + Draft chip + 403 |
+| T09 Review screen | done | - | 4 sections, anchors visible, autosave 800ms, 409 immutable |
+| T10 Reveal and compare | done | - | R2 403, matrix divergence, means via scoring |
+| T11 Scoring library | done | 9835393 | 29 tests, pure, hawk/dove, ranking |
 | — **M1 acceptance** (`07-ACCEPTANCE.md` Scenario A) | todo | | |
 | T12 Applications ranking table | todo | | |
 | T13 Application detail, decisions, feedback | todo | | |

@@ -1,71 +1,73 @@
-export default function Home() {
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifySession } from "@/lib/auth";
+import DashboardClient from "./dashboard-client";
+
+export default async function Home() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("fa27_session")?.value;
+  if (!token) redirect("/login");
+  const payload = await verifySession(token);
+  if (!payload || !payload.authed) redirect("/login");
+  if (!payload.evaluatorId) redirect("/who");
+
+  const evaluatorName = "";
+  // Header is rendered by DashboardClient fetch; this page provides the top frame + Switch link
+  // We pass nothing — auth is verified — client will load evaluator name via /api/queue;
+  // we also render a server-side header with Signed in as ... using payload if we had name, but
+  // we fetch name client-side to avoid extra DB query here (middleware already did minimal).
+  // Instead, include a thin server header with Switch link (client will also show wave header).
   return (
-    <main style={{ maxWidth: 720, margin: "80px auto", padding: "0 24px" }}>
-      <div
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <header
         style={{
+          height: 56,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
           background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          padding: 32,
-          boxShadow: "var(--shadow-sm)",
+          borderBottom: "1px solid var(--border)",
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
         }}
       >
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 8,
-            background: "var(--accent)",
-            color: "var(--accent-text)",
-            display: "grid",
-            placeItems: "center",
-            fontWeight: 600,
-            fontSize: 13,
-            marginBottom: 16,
-          }}
-        >
-          F27
-        </div>
-        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>
-          FACILITATE 2027 — Session Assessment
-        </h1>
-        <p style={{ color: "var(--text-muted)", marginTop: 8, lineHeight: 1.6 }}>
-          Design tokens active. Light/dark follows your OS. Build OK — next step is authentication (T03).
-        </p>
-        <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-          <a
-            href="/styleguide"
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
+          <span
             style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
               background: "var(--accent)",
               color: "var(--accent-text)",
-              padding: "10px 16px",
-              borderRadius: 8,
-              textDecoration: "none",
-              fontWeight: 500,
-              fontSize: 14,
+              display: "grid",
+              placeItems: "center",
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: ".02em",
             }}
           >
-            Styleguide →
-          </a>
-          <a
-            href="/login"
-            style={{
-              border: "1px solid var(--border-strong)",
-              padding: "10px 16px",
-              borderRadius: 8,
-              textDecoration: "none",
-              color: "var(--text)",
-              fontWeight: 500,
-              fontSize: 14,
-            }}
-          >
-            Login
-          </a>
-        </div>
-      </div>
-      <p style={{ color: "var(--text-faint)", fontSize: 12, marginTop: 16, textAlign: "center" }}>
-        T01 — Project setup · Next.js 15 · Tailwind v4 · Neon · Vercel
-      </p>
-    </main>
+            F27
+          </span>
+          <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: "-.01em" }}>FACILITATE 2027</span>
+        </a>
+        <a
+          href="/who"
+          style={{
+            fontSize: 13,
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            border: "1px solid var(--border)",
+            borderRadius: 999,
+            padding: "5px 12px",
+            background: "var(--surface-sunk)",
+          }}
+        >
+          Switch user
+        </a>
+      </header>
+      <DashboardClient />
+    </div>
   );
 }
