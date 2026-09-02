@@ -20,10 +20,10 @@ Status values: `todo` · `in progress` · `done` · `blocked`
 | T10 Reveal and compare | done | - | R2 403, matrix divergence, means via scoring |
 | T11 Scoring library | done | 9835393 | 29 tests, pure, hawk/dove, ranking |
 | — **M1 acceptance** (`07-ACCEPTANCE.md` Scenario A) | todo | | |
-| T12 Applications ranking table | todo | | |
-| T13 Application detail, decisions, feedback | todo | | |
-| T14 Programme balance dashboard | todo | | |
-| T15 Export | todo | | |
+| T12 Applications ranking table | done | - | sortable+filter, ranking 6.4, 403 assessor |
+| T13 Application detail, decisions, feedback | done | - | identity only here, feedback no private, decision+override audit |
+| T14 Programme balance dashboard | done | - | 50/10/15%+small slots, move recomputes 300ms |
+| T15 Export | done | - | csv BOM CRLF, 3 scopes, private never, xlsx 400 |
 | — **M2 acceptance** (Scenario B) | todo | | |
 | T16 Settings and evaluators | todo | | |
 | T17 Calibration mode | todo | | |
