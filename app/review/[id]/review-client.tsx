@@ -531,8 +531,16 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
     );
   }
 
+  const scoredCount = [focusScore, contentScore, interScore, credScore].filter((v) => v !== null).length;
   const scoringPanel = (
     <>
+      <div style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>← Read left · Score right →</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Tap 0, 1 or 2 in each card — {scoredCount}/4 scored</div>
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 600, background: scoredCount===4?"var(--accent)":"var(--surface)", color: scoredCount===4?"var(--accent-text)":"var(--text-faint)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 8px", whiteSpace: "nowrap" }}>{scoredCount}/4</div>
+      </div>
       <ScoringGroup id="score-focus">
         <ScoreControl criterion="focus" value={focusScore} noEvidence={focusNoEv} onChange={onFocusChange} />
         <button onClick={() => jumpTo("section-focus")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
@@ -541,6 +549,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </ScoringGroup>
 
       <ScoringGroup id="score-content">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>2</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
         <ScoreControl criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
         <button onClick={() => jumpTo("section-content")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
           Jump to the evidence ↑
@@ -548,6 +557,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </ScoringGroup>
 
       <ScoringGroup id="score-interactivity">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>3</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
         <ScoreControl criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
         <button onClick={() => jumpTo("section-interactivity")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
           Jump to the evidence ↑
@@ -555,6 +565,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </ScoringGroup>
 
       <ScoringGroup id="score-credibility">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>4</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
         <ScoreControl criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
         <button onClick={() => jumpTo("section-credibility")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
           Jump to the evidence ↑
@@ -726,7 +737,8 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
                 <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q9 — Room layout</div>
                 <div style={{ marginTop: 6 }}><Prose>{app?.q9_room_layout ?? "—"}</Prose></div>
               </div>
-              <ScoreControl criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>2</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
+        <ScoreControl criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
             </section>
 
             <section style={{ display: "grid", gap: 10, marginTop: 24 }}>
@@ -747,7 +759,8 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
                 <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q10 — Delivery mode</div>
                 <div style={{ marginTop: 6 }}><span style={{ fontSize: 14, background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 10px" }}>{app?.q10_delivery_mode ?? "—"}</span></div>
               </div>
-              <ScoreControl criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>3</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
+        <ScoreControl criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
             </section>
 
             <section style={{ display: "grid", gap: 10, marginTop: 24 }}>
@@ -760,7 +773,8 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
                 <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q19 — Large groups and English</div>
                 <div style={{ marginTop: 6 }}><Prose>{app?.q19_large_groups_english ?? "—"}</Prose></div>
               </div>
-              <ScoreControl criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>4</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
+        <ScoreControl criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
             </section>
 
             <div style={{ marginTop: 16, padding: "10px 12px", background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)" }}>

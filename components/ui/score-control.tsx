@@ -63,6 +63,7 @@ export function ScoreControl({ criterion, value, noEvidence, onChange, defaultEx
         {expanded ? "Hide rubric ▲" : "Show rubric ▾"}
         <span className="text-[11px] text-[var(--text-faint)] font-normal">— {expanded ? "anchors visible" : "tap when scoring"}</span>
       </button>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2, marginBottom: 2 }}>Select a score: 0 = Below · 1 = Meets · 2 = Above</div>
       <div id={`${groupId}-rubric`} role="radiogroup" aria-labelledby={`${groupId}-label`} className={cn("flex flex-col gap-2 mt-3", noEvidence && "opacity-55")}>
         <span id={`${groupId}-label`} className="sr-only">{crit.title}</span>
         {[0, 1, 2].map((v) => {
