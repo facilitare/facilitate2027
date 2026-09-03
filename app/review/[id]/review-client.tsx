@@ -5,6 +5,7 @@ import { ScoreControl } from "@/components/ui/score-control";
 import { Chip } from "@/components/ui/chip";
 import { ThemeBadge } from "@/components/ui/theme-badge";
 import { ParticipationMeter } from "@/components/ui/participation-meter";
+import { CRITERIA } from "@/lib/rubric";
 import type { ScoreValue } from "@/lib/rubric";
 
 type Assessment = {
@@ -78,6 +79,57 @@ function Prose({ children, large }: { children: React.ReactNode; large?: boolean
       }}
     >
       {children ?? "—"}
+    </div>
+  );
+}
+
+function InlineScore({ criterion, value, noEvidence, onChange }: { criterion: string; value: number | null; noEvidence: boolean; onChange: (v:any, ne:boolean)=>void }) {
+  const crit = (CRITERIA as any).find((x:any)=>x.key===criterion);
+  const [showDetails, setShowDetails] = useState(false);
+  return (
+    <div style={{ marginTop: 12, border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--surface)" }}>
+      <div style={{ background: "var(--danger-soft)", borderBottom: "1px solid var(--border)", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ background: "var(--danger)", color: "white", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 6 }}>Evaluate</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{crit.title}</span>
+        </div>
+        <button type="button" onClick={() => setShowDetails(!showDetails)} style={{ fontSize: 11, fontWeight: 600, color: "var(--accent)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 8px", cursor: "pointer" }}>{showDetails ? "Hide details ▲" : "More details ▾"}</button>
+      </div>
+      <div style={{ padding: "10px 12px 4px" }}>
+        <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.4 }}>{crit.question}</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, padding: 12, paddingTop: 8 }}>
+        {[0,1,2].map((v)=>{
+          const isSel = value===v && !noEvidence;
+          const labels = ["Below standard","Meets standard","Above standard"];
+          const abbr = ["Below","Meets","Above"];
+          const bg = isSel ? (v===0?"var(--score-0-soft)":v===1?"var(--score-1-soft)":"var(--score-2-soft)") : "var(--surface)";
+          const border = isSel ? (v===0?"var(--score-0)":v===1?"var(--score-1)":"var(--score-2)") : "var(--border)";
+          const color = isSel ? (v===0?"var(--score-0)":v===1?"var(--score-1)":"var(--score-2)") : "var(--text-faint)";
+          return (
+            <button key={v} disabled={noEvidence} onClick={()=>{ if(noEvidence) return; onChange(v,false); }} style={{ background: bg, border: `1.5px solid ${border}`, borderRadius: 10, padding: "12px 8px", cursor: noEvidence?"not-allowed":"pointer", opacity: noEvidence?0.5:1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minHeight: 92 }}>
+              <span style={{ fontSize: 26, fontWeight: 800, lineHeight: 1, color }}>{v}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase", color: isSel ? color : "var(--text-muted)", textAlign: "center" }}>{abbr[v]}</span>
+              <span style={{ fontSize: 10, color: "var(--text-faint)", textAlign: "center", lineHeight: 1.2 }}>{labels[v]}</span>
+              {isSel && <span style={{ fontSize: 10, color, fontWeight: 700, marginTop: 2 }}>✓ Selected</span>}
+            </button>
+          );
+        })}
+      </div>
+      {showDetails && (
+        <div style={{ padding: "0 12px 12px", display: "grid", gap: 8 }}>
+          {[0,1,2].map((v)=>(
+            <div key={v} style={{ background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: v===0?"var(--score-0)":v===1?"var(--score-1)":"var(--score-2)" }}>{v} — {["Below standard","Meets standard","Above standard"][v]}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.45 }}>{crit.anchors[v]}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderTop: "1px solid var(--border)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", background: "var(--surface-sunk)" }}>
+        <input type="checkbox" checked={noEvidence} onChange={(e)=> onChange(e.target.checked?0:null, e.target.checked)} style={{ accentColor: "var(--accent)", width: 14, height: 14 }} />
+        No evidence provided
+      </label>
     </div>
   );
 }
@@ -443,6 +495,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <div style={{ marginTop: 6 }}>{app?.q11_theme ? <ThemeBadge theme={app.q11_theme} /> : <span style={{ color: "var(--text-faint)" }}>—</span>}</div>
         </div>
       </section>
+      <InlineScore criterion="focus" value={focusScore} noEvidence={focusNoEv} onChange={onFocusChange} />
 
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "24px 0" }} />
 
@@ -475,6 +528,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <div style={{ marginTop: 6 }}><Prose>{app?.q9_room_layout ?? "—"}</Prose></div>
         </div>
       </section>
+      <InlineScore criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
 
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "24px 0" }} />
 
@@ -498,6 +552,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <div style={{ marginTop: 6 }}><span style={{ fontSize: 14, background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 10px" }}>{app?.q10_delivery_mode ?? "—"}</span></div>
         </div>
       </section>
+      <InlineScore criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
 
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "24px 0" }} />
 
@@ -513,6 +568,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <div style={{ marginTop: 6 }}><Prose>{app?.q19_large_groups_english ?? "—"}</Prose></div>
         </div>
       </section>
+      <InlineScore criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
 
       <div style={{ marginTop: 24, padding: "10px 12px", background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)" }}>
         IAF membership is recorded separately and is not part of this assessment.
@@ -534,44 +590,17 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
   const scoredCount = [focusScore, contentScore, interScore, credScore].filter((v) => v !== null).length;
   const scoringPanel = (
     <>
+
       <div style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>← Read left · Score right →</div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Tap 0, 1 or 2 in each card — {scoredCount}/4 scored</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>Your assessment progress</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{scoredCount}/4 criteria scored · {feedbackLiked.trim().length >= 20 && feedbackImprove.trim().length >= 20 ? "feedback complete" : "feedback needed"}</div>
         </div>
         <div style={{ fontSize: 11, fontWeight: 600, background: scoredCount===4?"var(--accent)":"var(--surface)", color: scoredCount===4?"var(--accent-text)":"var(--text-faint)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 8px", whiteSpace: "nowrap" }}>{scoredCount}/4</div>
       </div>
-      <ScoringGroup id="score-focus">
-        <ScoreControl criterion="focus" value={focusScore} noEvidence={focusNoEv} onChange={onFocusChange} />
-        <button onClick={() => jumpTo("section-focus")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
-          Jump to the evidence ↑
-        </button>
-      </ScoringGroup>
-
-      <ScoringGroup id="score-content">
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>2</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
-        <ScoreControl criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
-        <button onClick={() => jumpTo("section-content")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
-          Jump to the evidence ↑
-        </button>
-      </ScoringGroup>
-
-      <ScoringGroup id="score-interactivity">
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>3</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
-        <ScoreControl criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
-        <button onClick={() => jumpTo("section-interactivity")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
-          Jump to the evidence ↑
-        </button>
-      </ScoringGroup>
-
-      <ScoringGroup id="score-credibility">
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>4</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
-        <ScoreControl criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
-        <button onClick={() => jumpTo("section-credibility")} style={{ fontSize: 12, color: "var(--accent)", background: "none", border: "none", textAlign: "left", cursor: "pointer", padding: 0 }}>
-          Jump to the evidence ↑
-        </button>
-      </ScoringGroup>
-
+      <div style={{ background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+        <strong style={{ color: "var(--text)" }}>How to score:</strong> Read each section on the left and tap the 3 quadrants directly under it — <strong>0 Below</strong> · <strong>1 Meets</strong> · <strong>2 Above</strong>. Need the full rubric? Tap <em>More details</em> in the red Evaluate box. Your Total updates below.
+      </div>
       <div style={{ display: "grid", gap: 12, marginTop: 4 }}>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 600 }}>What was strong about this session? <span style={{ color: "var(--danger)" }}>*</span></span>
@@ -615,6 +644,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           />
         </label>
       </div>
+
     </>
   );
 
