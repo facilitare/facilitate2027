@@ -301,8 +301,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
 
   const total = (focusScore ?? 0) + (contentScore ?? 0) + (interScore ?? 0) + (credScore ?? 0);
   const hasAllScores = focusScore !== null && contentScore !== null && interScore !== null && credScore !== null;
-  const feedbackOk = feedbackLiked.trim().length >= 20 && feedbackImprove.trim().length >= 20;
-  const canSubmit = hasAllScores && feedbackOk && assessment?.state !== "submitted" && assessment?.state !== "recused";
+  const canSubmit = hasAllScores && assessment?.state !== "submitted" && assessment?.state !== "recused";
 
   function submitDisabledReason(): string {
     const msgs: string[] = [];
@@ -310,8 +309,6 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
     if (contentScore == null) msgs.push("Score Session Content");
     if (interScore == null) msgs.push("Score Interactivity");
     if (credScore == null) msgs.push("Score Credibility");
-    if (feedbackLiked.trim().length < 20) msgs.push("What was strong (≥20 chars)");
-    if (feedbackImprove.trim().length < 20) msgs.push("What could be improved (≥20 chars)");
     if (msgs.length === 0) return "";
     return "To submit: " + msgs.join(" · ");
   }
@@ -603,7 +600,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </div>
       <div style={{ display: "grid", gap: 12, marginTop: 4 }}>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>What was strong about this session? <span style={{ color: "var(--danger)" }}>*</span></span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>What was strong about this session? <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional)</span></span>
           <textarea
             value={feedbackLiked}
             onChange={(e) => {
@@ -614,10 +611,10 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
             placeholder="Be specific — this feeds the applicant feedback"
             style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "var(--font-sans)", background: "var(--surface)", color: "var(--text)", resize: "vertical" }}
           />
-          <span style={{ fontSize: 11, color: feedbackLiked.trim().length < 20 ? "var(--danger)" : "var(--text-faint)" }}>{feedbackLiked.trim().length} / 20 characters minimum</span>
+          <span style={{ fontSize: 11, color: "var(--text-faint)" }}>{feedbackLiked.trim().length} characters (optional)</span>
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>What could be improved? <span style={{ color: "var(--danger)" }}>*</span></span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>What could be improved? <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional)</span></span>
           <textarea
             value={feedbackImprove}
             onChange={(e) => {
@@ -628,7 +625,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
             placeholder="Constructive, actionable"
             style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "var(--font-sans)", background: "var(--surface)", color: "var(--text)", resize: "vertical" }}
           />
-          <span style={{ fontSize: 11, color: feedbackImprove.trim().length < 20 ? "var(--danger)" : "var(--text-faint)" }}>{feedbackImprove.trim().length} / 20 characters minimum</span>
+          <span style={{ fontSize: 11, color: "var(--text-faint)" }}>{feedbackImprove.trim().length} characters (optional)</span>
         </label>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 13, fontWeight: 600 }}>Private note <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional, not shared with applicant)</span></span>
@@ -815,12 +812,12 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
               <label style={{ display: "grid", gap: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>What was strong about this session? *</span>
                 <textarea value={feedbackLiked} onChange={(e) => { setFeedbackLiked(e.target.value); scheduleAutosave({ feedback_liked: e.target.value }); }} rows={3} placeholder="Be specific" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "var(--font-sans)", background: "var(--surface)", color: "var(--text)" }} />
-                <span style={{ fontSize: 11, color: feedbackLiked.trim().length < 20 ? "var(--danger)" : "var(--text-faint)" }}>{feedbackLiked.trim().length} / 20</span>
+                <span style={{ fontSize: 11, color: feedbackLiked.trim().length < 20 ? "var(--danger)" : "var(--text-faint)" }}>{feedbackLiked.trim().length} (optional)</span>
               </label>
               <label style={{ display: "grid", gap: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>What could be improved? *</span>
                 <textarea value={feedbackImprove} onChange={(e) => { setFeedbackImprove(e.target.value); scheduleAutosave({ feedback_improve: e.target.value }); }} rows={3} placeholder="Constructive" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "var(--font-sans)", background: "var(--surface)", color: "var(--text)" }} />
-                <span style={{ fontSize: 11, color: feedbackImprove.trim().length < 20 ? "var(--danger)" : "var(--text-faint)" }}>{feedbackImprove.trim().length} / 20</span>
+                <span style={{ fontSize: 11, color: feedbackImprove.trim().length < 20 ? "var(--danger)" : "var(--text-faint)" }}>{feedbackImprove.trim().length} (optional)</span>
               </label>
               <label style={{ display: "grid", gap: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>Private note <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional)</span></span>

@@ -49,16 +49,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const bodyParsed = BodySchema.safeParse(rawBody);
   if (!bodyParsed.success) return Response.json({ error: "Invalid request", code: "bad_request" }, { status: 400 });
 
-  // Validate completeness
+  // Validate completeness — only scores required, feedback optional
   const missing: string[] = [];
   if (a.focus_score == null) missing.push("focus");
   if (a.content_score == null) missing.push("content");
   if (a.interactivity_score == null) missing.push("interactivity");
   if (a.credibility_score == null) missing.push("credibility");
-  const fl = (a.feedback_liked ?? "").trim();
-  const fi = (a.feedback_improve ?? "").trim();
-  if (fl.length < 20) missing.push("feedback_liked (≥20 chars)");
-  if (fi.length < 20) missing.push("feedback_improve (≥20 chars)");
   if (missing.length > 0) {
     return Response.json({ error: `Incomplete: ${missing.join(", ")}`, code: "validation_failed", missing }, { status: 422 });
   }
