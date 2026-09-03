@@ -70,10 +70,11 @@ function Prose({ children, large }: { children: React.ReactNode; large?: boolean
     <div
       style={{
         fontFamily: "var(--font-serif)",
-        fontSize: large ? 18 : 17,
-        lineHeight: 1.65,
+        fontSize: large ? 19 : 17.5,
+        lineHeight: large ? 1.7 : 1.65,
         maxWidth: "68ch",
         whiteSpace: "pre-wrap",
+        color: "var(--text)",
       }}
     >
       {children ?? "—"}
@@ -86,13 +87,14 @@ function SectionHeading({ children, id }: { children: string; id: string }) {
     <h2
       id={id}
       style={{
-        fontSize: 15,
-        fontWeight: 600,
-        letterSpacing: ".04em",
+        fontSize: 13,
+        fontWeight: 700,
+        letterSpacing: ".06em",
         textTransform: "uppercase",
         margin: 0,
         paddingBottom: 8,
         borderBottom: "1px solid var(--border)",
+        color: "var(--accent)",
       }}
     >
       {children}
@@ -651,7 +653,23 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
             }
           >
             <main id="review-left" aria-label="Application" style={{ minWidth: 0, maxHeight: "calc(100vh - 56px)", overflowY: "auto", paddingRight: 8, scrollbarWidth: "thin" }}>
-              {leftContent}
+              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
+                <div style={{ background: "var(--surface-sunk)", borderBottom: "1px solid var(--border)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Application to evaluate</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, marginTop: 2, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontVariantNumeric: "tabular-nums" }}>{app?.ref_code ?? "—"}</span>
+                      {app?.q11_theme ? <ThemeBadge theme={app.q11_theme} /> : null}
+                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px" }}>Anonymous · applicant identity hidden</span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-faint)", textAlign: "right" }}>
+                    <div>Ref {app?.ref_code} · {app?.id.slice(0, 8)}</div>
+                    <div style={{ fontSize: 11 }}>{app?.q4_session_provides?.slice(0,2).join(" · ") ?? ""}</div>
+                  </div>
+                </div>
+                <div style={{ padding: "20px 20px 24px" }}>{leftContent}</div>
+              </div>
             </main>
             <aside id="scoring" aria-label="Scoring" style={{ position: "sticky", top: 80, alignSelf: "start", maxHeight: "calc(100vh - 88px)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 16, paddingBottom: 16 }}>
               <h2 style={{ fontSize: 15, fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase", margin: 0 }}>Scoring</h2>

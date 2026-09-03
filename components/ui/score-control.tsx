@@ -81,7 +81,7 @@ export function ScoreControl({ criterion, value, noEvidence, onChange, defaultEx
               onClick={() => select(v as ScoreValue)}
               className={cn(
                 "grid grid-cols-[26px_1fr] gap-[10px] text-left w-full bg-[var(--surface)] border border-[var(--border)] rounded-[10px] cursor-pointer transition-colors hover:border-[var(--border-strong)] focus-visible:outline-[2px] focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2",
-                showAnchor ? "p-[11px] min-h-[64px]" : "p-[10px_11px] min-h-[48px]",
+                showAnchor ? "p-[11px] min-h-[64px]" : "p-[12px_14px] min-h-[52px]",
                 isSelected && "border-[1.5px]",
                 isSelected && (showAnchor ? "p-[10.5px_11.5px]" : "p-[9.5px_10.5px]"),
                 scoreClass
