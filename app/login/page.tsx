@@ -17,14 +17,15 @@ export default function LoginPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: pw }),
     });
+    const j = await res.json().catch(() => ({}));
     setLoading(false);
     if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
       if (res.status === 429) setErr("Too many attempts — try again in 15 minutes.");
       else setErr(j.error || "Incorrect password");
       return;
     }
-    router.push("/who");
+    if (j.directAdmin) router.push("/");
+    else router.push("/who");
   }
 
   return (
@@ -44,6 +45,7 @@ export default function LoginPage() {
         <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontWeight: 600, fontSize: 13, marginBottom: 16 }}>F27</div>
         <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>FACILITATE 2027</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>Private assessment — enter the shared panel password.</p>
+        <p style={{ color: "var(--text-faint)", fontSize: 11, marginTop: 4 }}>Assessors: <code>conference</code> · Administrator: <code>iafeme</code> goes directly to admin</p>
         <label style={{ display: "block", marginTop: 20, fontSize: 13, fontWeight: 500 }}>Password</label>
         <input
           type="password"
