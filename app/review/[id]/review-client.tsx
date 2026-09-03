@@ -497,7 +497,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </section>
       <InlineScore criterion="focus" value={focusScore} noEvidence={focusNoEv} onChange={onFocusChange} />
 
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "24px 0" }} />
+      <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} />
 
       {/* Section 2 */}
       <section id="section-content" style={{ display: "grid", gap: 14 }}>
@@ -530,7 +530,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </section>
       <InlineScore criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
 
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "24px 0" }} />
+      <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} />
 
       {/* Section 3 */}
       <section id="section-interactivity" style={{ display: "grid", gap: 14 }}>
@@ -554,7 +554,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </section>
       <InlineScore criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
 
-      <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "24px 0" }} />
+      <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} />
 
       {/* Section 4 */}
       <section id="section-credibility" style={{ display: "grid", gap: 14 }}>
