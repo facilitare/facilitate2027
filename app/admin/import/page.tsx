@@ -146,35 +146,39 @@ export default function ImportPage() {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <h1 className="text-2xl font-semibold">CSV Import</h1>
-      <p className="text-sm text-muted-foreground">
-        Upload a Google Forms CSV export. Headers are fuzzy-matched on the first 40 characters (case-insensitive). Multi-select values are split on &quot;, &quot;, enums are normalised (lowercase, non-alnum → _). Duplicates are detected by <code>q1_email</code> per wave. Ref codes <code>W1-001…</code> are assigned in submission order.
-      </p>
+      <ol className="text-sm text-[var(--text-muted)] list-decimal pl-5 space-y-1">
+        <li>In Google Sheets (form responses): <strong>File → Download → Comma-separated values (.csv)</strong>.</li>
+        <li><strong>Choose file</strong> below and pick that CSV.</li>
+        <li>Press <strong>Check file</strong> — nothing is saved yet; you get a report of what would be imported.</li>
+        <li>If the report looks right, press <strong>Import</strong>. Applicants already imported (same email) are skipped automatically.</li>
+      </ol>
 
-      <div className="border rounded-lg p-4 space-y-4 bg-card">
+      <div className="border rounded-lg p-4 space-y-4 bg-[var(--surface)] border-[var(--border)]">
         <label className="block">
-          <span className="text-sm font-medium">CSV file</span>
+          <span className="text-sm font-medium">Step 2 — choose the CSV file</span>
           <input
             type="file"
             accept=".csv,text/csv"
             onChange={handleFileChange}
-            className="mt-1 block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-primary-foreground"
+            className="mt-1 block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[var(--accent)] file:text-[var(--accent-text)] file:font-semibold file:cursor-pointer"
           />
         </label>
         {headers.length > 0 && (
-          <div className="text-xs text-muted-foreground">{headers.length} columns detected, {headers.filter(h=>h.trim()!=="").length} non-empty headers</div>
+          <div className="text-xs text-[var(--text-muted)]">{headers.length} columns detected, {headers.filter(h=>h.trim()!=="").length} non-empty headers</div>
         )}
       </div>
 
       {headers.length > 0 && mapping && (
-        <div className="border rounded-lg p-4 space-y-4 bg-card">
-          <h2 className="text-lg font-medium">Mapping — auto-matched with manual override</h2>
-          <p className="text-xs text-muted-foreground">
+        <div className="border rounded-lg p-4 space-y-4 bg-[var(--surface)] border-[var(--border)]">
+          <details><summary className="text-sm font-medium cursor-pointer">Advanced: how form questions are matched to app fields (only change if something is unmapped)</summary>
+          <h2 className="text-lg font-medium mt-3">Mapping — auto-matched with manual override</h2>
+          <p className="text-xs text-[var(--text-muted)]">
             Auto-matching uses first 40 chars, case-insensitive, starts-with fuzzy. Use the dropdown to override. Unmapped headers will be ignored; unmapped multi-select values go to <code>_other</code> and appear in the report.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b bg-muted/50">
+                <tr className="border-b bg-[var(--surface-sunk)]">
                   <th className="text-left p-2">#</th>
                   <th className="text-left p-2">CSV Header (first 60 chars)</th>
                   <th className="text-left p-2">Auto-matched field</th>
@@ -209,6 +213,7 @@ export default function ImportPage() {
             </table>
           </div>
 
+          </details>
           {unmappedHeadersEff.length > 0 && (
             <div className="text-xs">
               <span className="font-medium">Unmapped headers ({unmappedHeadersEff.length}):</span>{" "}
@@ -216,21 +221,21 @@ export default function ImportPage() {
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={doDryRun}
               disabled={loading !== null}
-              className="px-4 py-2 rounded bg-secondary text-secondary-foreground border hover:bg-secondary/80 disabled:opacity-50"
+              className="px-4 py-2 rounded bg-[var(--surface)] text-[var(--text)] border border-[var(--border-strong)] font-medium cursor-pointer disabled:opacity-50"
             >
-              {loading === "dry" ? "Running…" : "Dry run"}
+              {loading === "dry" ? "Checking…" : "Step 3 — Check file"}
             </button>
             <button
               onClick={doCommit}
               disabled={loading !== null || !report}
-              className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              title={!report ? "Run dry-run first" : undefined}
+              className="px-4 py-2 rounded bg-[var(--accent)] text-[var(--accent-text)] font-semibold cursor-pointer disabled:opacity-50"
+              title={!report ? "Check the file first" : undefined}
             >
-              {loading === "commit" ? "Importing…" : "Import"}
+              {loading === "commit" ? "Importing…" : "Step 4 — Import"}
             </button>
           </div>
           {error && <div className="text-sm text-red-600 border border-red-200 bg-red-50 p-2 rounded">{error}</div>}
@@ -238,23 +243,23 @@ export default function ImportPage() {
       )}
 
       {report && (
-        <div className="border rounded-lg p-4 space-y-3 bg-card">
-          <h2 className="text-lg font-medium">Report {report.importedCount !== undefined && report.importedCount > 0 ? "(committed)" : "(dry-run)"}</h2>
+        <div className="border rounded-lg p-4 space-y-3 bg-[var(--surface)] border-[var(--border)]">
+          <h2 className="text-lg font-medium">Report {report.importedCount !== undefined && report.importedCount > 0 ? "— imported ✓" : "— check only, nothing saved yet"}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div className="border rounded p-3">
-              <div className="text-muted-foreground">Rows read</div>
+              <div className="text-[var(--text-muted)]">Rows read</div>
               <div className="text-xl font-semibold">{report.rowsRead}</div>
             </div>
             <div className="border rounded p-3">
-              <div className="text-muted-foreground">Valid rows</div>
+              <div className="text-[var(--text-muted)]">Valid rows</div>
               <div className="text-xl font-semibold">{report.rowsValid}</div>
             </div>
             <div className="border rounded p-3">
-              <div className="text-muted-foreground">Imported</div>
+              <div className="text-[var(--text-muted)]">Imported</div>
               <div className="text-xl font-semibold">{report.importedCount ?? 0}</div>
             </div>
             <div className="border rounded p-3">
-              <div className="text-muted-foreground">Unmapped headers</div>
+              <div className="text-[var(--text-muted)]">Unmapped headers</div>
               <div className="text-xl font-semibold">{report.unmappedHeaders.length}</div>
             </div>
           </div>
@@ -262,26 +267,26 @@ export default function ImportPage() {
           <div className="space-y-2 text-sm">
             <div>
               <span className="font-medium">Duplicates ({report.duplicates.length}):</span>{" "}
-              {report.duplicates.length === 0 ? <span className="text-muted-foreground">none</span> : report.duplicates.map((d) => `row ${d.row} ${d.email}`).join(", ")}
+              {report.duplicates.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.duplicates.map((d) => `row ${d.row} ${d.email}`).join(", ")}
             </div>
             <div>
               <span className="font-medium">Unmapped values ({report.unmapped.length}):</span>{" "}
-              {report.unmapped.length === 0 ? <span className="text-muted-foreground">none</span> : report.unmapped.map((u) => `row ${u.row} ${u.field}="${u.value}"`).join(", ")}
+              {report.unmapped.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.unmapped.map((u) => `row ${u.row} ${u.field}="${u.value}"`).join(", ")}
             </div>
             <div>
               <span className="font-medium">Malformed enums ({report.malformed.length}):</span>{" "}
-              {report.malformed.length === 0 ? <span className="text-muted-foreground">none</span> : report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`).join(", ")}
+              {report.malformed.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`).join(", ")}
             </div>
             <div>
               <span className="font-medium">Anonymity flags ({report.anonymityFlags.length}):</span>{" "}
-              {report.anonymityFlags.length === 0 ? <span className="text-muted-foreground">none</span> : report.anonymityFlags.map((a) => `row ${a.row} ${a.field}: ${a.reason}`).join("; ")}
+              {report.anonymityFlags.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.anonymityFlags.map((a) => `row ${a.row} ${a.field}: ${a.reason}`).join("; ")}
             </div>
             {report.refCodes && report.refCodes.length > 0 && (
               <div>
                 <span className="font-medium">Ref codes:</span> {report.refCodes.join(", ")}
               </div>
             )}
-            <p className="text-xs text-muted-foreground pt-2">
+            <p className="text-xs text-[var(--text-muted)] pt-2">
               Anonymity scan is heuristic — name tokens (≥3 chars), email local part (≥4 chars), URLs/domains, self-reference (&quot;I am …&quot;, &quot;my company/firm/consultancy&quot;). Flagged applications require redaction or dismissal before assignment.
             </p>
           </div>
