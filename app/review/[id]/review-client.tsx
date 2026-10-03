@@ -2,11 +2,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ScoreControl } from "@/components/ui/score-control";
-import { Chip } from "@/components/ui/chip";
 import { ThemeBadge } from "@/components/ui/theme-badge";
-import { ParticipationMeter } from "@/components/ui/participation-meter";
 import { CRITERIA } from "@/lib/rubric";
-import type { ScoreValue } from "@/lib/rubric";
+import type { ScoreValue, CriterionKey } from "@/lib/rubric";
+import { FORM_SECTIONS, DELIVERY_LABELS, type FormQuestion } from "@/lib/form-sections";
 
 type Assessment = {
   id: string;
@@ -32,36 +31,74 @@ type Application = {
   id: string;
   ref_code: string;
   wave_id: string;
-  q11_theme: string | null;
-  q4_session_provides: string[] | null;
-  q4_session_provides_other: string | null;
-  q5_audience: string[] | null;
-  q5_audience_other: string | null;
-  q6_audience_detail: string | null;
-  q7_about_session: string | null;
-  q7b_benefits: string | null;
-  q8_group_setup: string[] | null;
-  q8_group_setup_other: string | null;
-  q9_room_layout: string | null;
-  q10_delivery_mode: string | null;
-  q12_timekeeping: string | null;
-  q13_participation_level: number | null;
-  q14_methods: string[] | null;
-  q14_methods_other: string | null;
-  q15_first_ten_minutes: string | null;
-  q16_pathway: string | null;
-  q19_large_groups_english: string | null;
+  [field: string]: string | string[] | number | null;
 };
 
-function Chips({ items, other }: { items: string[] | null; other?: string | null }) {
+function TickedList({ items, other }: { items: string[] | null; other?: string | null }) {
   const arr = items ?? [];
-  if (arr.length === 0 && !other) return <span style={{ color: "var(--text-faint)", fontSize: 13 }}>—</span>;
+  if (arr.length === 0 && !other) return <span style={{ color: "var(--text-faint)", fontSize: 13 }}>Nothing ticked</span>;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+    <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 4 }}>
       {arr.map((v, i) => (
-        <Chip key={i}>{v}</Chip>
+        <li key={i} style={{ display: "flex", gap: 8, fontSize: 15, lineHeight: 1.45 }}>
+          <span aria-hidden style={{ color: "var(--accent)", fontWeight: 700 }}>☑</span>
+          <span>{v}</span>
+        </li>
       ))}
-      {other ? <Chip>{other}</Chip> : null}
+      {other ? (
+        <li style={{ display: "flex", gap: 8, fontSize: 15, lineHeight: 1.45 }}>
+          <span aria-hidden style={{ color: "var(--accent)", fontWeight: 700 }}>☑</span>
+          <span><em style={{ color: "var(--text-muted)" }}>Other:</em> {other}</span>
+        </li>
+      ) : null}
+    </ul>
+  );
+}
+
+function Answer({ q, app }: { q: FormQuestion; app: Application | null }) {
+  const v = app?.[q.field] ?? null;
+  const other = q.otherField ? ((app?.[q.otherField] as string | null) ?? null) : null;
+  let body: React.ReactNode;
+  switch (q.kind) {
+    case "title":
+      body = <div style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 600, lineHeight: 1.3 }}>{(v as string) ?? "—"}</div>;
+      break;
+    case "theme":
+      body = v ? <ThemeBadge theme={v as string} /> : <span style={{ color: "var(--text-faint)" }}>—</span>;
+      break;
+    case "list":
+      body = <TickedList items={v as string[] | null} other={other} />;
+      break;
+    case "delivery":
+      body = <span style={{ fontSize: 15 }}>{v ? DELIVERY_LABELS[v as string] ?? (v as string) : other ? <><em style={{ color: "var(--text-muted)" }}>Other:</em> {other}</> : "—"}</span>;
+      break;
+    case "iaf":
+      body = (
+        <div style={{ fontSize: 14, display: "grid", gap: 4 }}>
+          <div>IAF member: <strong>{v === "yes" ? "Yes" : v === "no" ? "No" : v === "not_sure" ? "Not sure" : "—"}</strong></div>
+          <div>Accreditation: <strong>{other ?? "None"}</strong></div>
+          <div style={{ fontSize: 12, color: "var(--text-faint)" }}>For information only — you do not score this. The panel lead adds IAF standing automatically from these two answers.</div>
+        </div>
+      );
+      break;
+    default:
+      body = <Prose>{(v as string) ?? "—"}</Prose>;
+  }
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+        <span style={{ color: "var(--accent)", marginRight: 6 }}>{q.num}</span>{q.label}
+      </div>
+      {q.help ? <div style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 2, fontStyle: "italic" }}>{q.help}</div> : null}
+      <div style={{ marginTop: 6 }}>{body}</div>
+    </div>
+  );
+}
+
+function SectionIntro({ children }: { children: string }) {
+  return (
+    <div style={{ background: "var(--accent-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
+      <strong style={{ color: "var(--text)" }}>What the form asked: </strong>{children}
     </div>
   );
 }
@@ -101,7 +138,7 @@ function InlineScore({ criterion, value, noEvidence, onChange }: { criterion: st
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, padding: 12, paddingTop: 8 }}>
         {[0,1,2].map((v)=>{
           const isSel = value===v && !noEvidence;
-          const labels = ["Below standard","Meets standard","Above standard"];
+          const labels = ["Below standard or not enough information","Meets standard","Above standard"];
           const abbr = ["Below","Meets","Above"];
           const bg = isSel ? (v===0?"var(--score-0-soft)":v===1?"var(--score-1-soft)":"var(--score-2-soft)") : "var(--surface)";
           const border = isSel ? (v===0?"var(--score-0)":v===1?"var(--score-1)":"var(--score-2)") : "var(--border)";
@@ -128,7 +165,7 @@ function InlineScore({ criterion, value, noEvidence, onChange }: { criterion: st
       )}
       <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderTop: "1px solid var(--border)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", background: "var(--surface-sunk)" }}>
         <input type="checkbox" checked={noEvidence} onChange={(e)=> onChange(e.target.checked?0:null, e.target.checked)} style={{ accentColor: "var(--accent)", width: 14, height: 14 }} />
-        No evidence provided
+        No evidence provided — the question was left blank
       </label>
     </div>
   );
@@ -465,6 +502,13 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
     );
   }
 
+  function scoreFor(c: CriterionKey) {
+    if (c === "focus") return { value: focusScore, noEv: focusNoEv, onChange: onFocusChange };
+    if (c === "content") return { value: contentScore, noEv: contentNoEv, onChange: onContentChange };
+    if (c === "interactivity") return { value: interScore, noEv: interNoEv, onChange: onInterChange };
+    return { value: credScore, noEv: credNoEv, onChange: onCredChange };
+  }
+
   const leftContent = (
     <>
       {/* Skip link */}
@@ -472,104 +516,23 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
         Skip to scoring
       </a>
 
-      {/* Section 1 */}
-      <section id="section-focus" style={{ display: "grid", gap: 14 }}>
-        <SectionHeading id="h-focus">1 — Facilitation Focus</SectionHeading>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q4 — This session provides</div>
-          <div style={{ marginTop: 6 }}><Chips items={app?.q4_session_provides ?? null} other={app?.q4_session_provides_other ?? null} /></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q5 — Audience</div>
-          <div style={{ marginTop: 6 }}><Chips items={app?.q5_audience ?? null} other={app?.q5_audience_other ?? null} /></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q6 — Who benefits</div>
-          <div style={{ marginTop: 6 }}><Prose>{app?.q6_audience_detail ?? "—"}</Prose></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q11 — Theme</div>
-          <div style={{ marginTop: 6 }}>{app?.q11_theme ? <ThemeBadge theme={app.q11_theme} /> : <span style={{ color: "var(--text-faint)" }}>—</span>}</div>
-        </div>
-      </section>
-      <InlineScore criterion="focus" value={focusScore} noEvidence={focusNoEv} onChange={onFocusChange} />
-
-      <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} />
-
-      {/* Section 2 */}
-      <section id="section-content" style={{ display: "grid", gap: 14 }}>
-        <SectionHeading id="h-content">2 — Session Content</SectionHeading>
-        <div style={{ background: "var(--accent-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "var(--text-muted)" }}>
-          The session slot is {sessionMinutes} minutes, including the host&apos;s introduction and close.
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q7 — About the session</div>
-          <div style={{ marginTop: 6 }}><Prose large>{app?.q7_about_session ?? "—"}</Prose></div>
-        </div>
-        {app?.q7b_benefits ? (
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q7b — Benefits for participants</div>
-            <div style={{ marginTop: 6 }}><Prose>{app.q7b_benefits}</Prose></div>
-          </div>
-        ) : null}
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q12 — Timekeeping</div>
-          <div style={{ marginTop: 6 }}><Prose>{app?.q12_timekeeping ?? "—"}</Prose></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q8 — Group setup</div>
-          <div style={{ marginTop: 6 }}><Chips items={app?.q8_group_setup ?? null} other={app?.q8_group_setup_other ?? null} /></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q9 — Room layout</div>
-          <div style={{ marginTop: 6 }}><Prose>{app?.q9_room_layout ?? "—"}</Prose></div>
-        </div>
-      </section>
-      <InlineScore criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
-
-      <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} />
-
-      {/* Section 3 */}
-      <section id="section-interactivity" style={{ display: "grid", gap: 14 }}>
-        <SectionHeading id="h-interactivity">3 — Interactivity</SectionHeading>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q13 — Participation level</div>
-          <div style={{ marginTop: 6 }}><ParticipationMeter value={app?.q13_participation_level ?? null} /></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q14 — Methods</div>
-          <div style={{ marginTop: 6 }}><Chips items={app?.q14_methods ?? null} other={app?.q14_methods_other ?? null} /></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q15 — First ten minutes</div>
-          <div style={{ marginTop: 6 }}><Prose>{app?.q15_first_ten_minutes ?? "—"}</Prose></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q10 — Delivery mode</div>
-          <div style={{ marginTop: 6 }}><span style={{ fontSize: 14, background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 10px" }}>{app?.q10_delivery_mode ?? "—"}</span></div>
-        </div>
-      </section>
-      <InlineScore criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
-
-      <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} />
-
-      {/* Section 4 */}
-      <section id="section-credibility" style={{ display: "grid", gap: 14 }}>
-        <SectionHeading id="h-credibility">4 — Credibility and Experience</SectionHeading>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q16 — Facilitation pathway</div>
-          <div style={{ marginTop: 6 }}><Prose>{app?.q16_pathway ?? "—"}</Prose></div>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q19 — Large groups and English</div>
-          <div style={{ marginTop: 6 }}><Prose>{app?.q19_large_groups_english ?? "—"}</Prose></div>
-        </div>
-      </section>
-      <InlineScore criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
-
-      <div style={{ marginTop: 24, padding: "10px 12px", background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)" }}>
-        IAF membership is recorded separately and is not part of this assessment.
+      <div style={{ marginBottom: 20, fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+        FACILITATE 2027 · 16–17 April 2027, Birmingham. Answers appear in the same order and numbering as the application form (sections 2–5; section 1 is logistics and section 6 is personal information, both hidden). Score each criterion after reading its section.
       </div>
+      {FORM_SECTIONS.map((sec, i) => {
+        const sc = scoreFor(sec.criterion);
+        return (
+          <div key={sec.num}>
+            {i > 0 ? <hr style={{ border: "none", borderTop: "3px solid var(--accent)", margin: "28px 0", borderRadius: 2, opacity: 0.9 }} /> : null}
+            <section id={`section-${sec.criterion}`} style={{ display: "grid", gap: 14 }}>
+              <SectionHeading id={`h-${sec.criterion}`}>{`Section ${sec.num} — ${sec.title}`}</SectionHeading>
+              <SectionIntro>{sec.intro}</SectionIntro>
+              {sec.questions.map((q) => <Answer key={q.num} q={q} app={app} />)}
+            </section>
+            <InlineScore criterion={sec.criterion} value={sc.value} noEvidence={sc.noEv} onChange={sc.onChange} />
+          </div>
+        );
+      })}
 
       <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-faint)" }}>Ref {app?.ref_code} · {app?.id.slice(0, 8)}</div>
     </>
@@ -656,7 +619,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <a href="/" style={{ fontWeight: 600, textDecoration: "none", color: "var(--text)", fontSize: 14 }}>← Queue</a>
           <span style={{ color: "var(--border-strong)" }}>|</span>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{app?.ref_code ?? "—"} · Review</span>
-          {app?.q11_theme ? <ThemeBadge theme={app.q11_theme} /> : null}
+          {app?.q11_theme ? <ThemeBadge theme={app.q11_theme as string} /> : null}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span aria-live="polite" style={{ fontSize: 12, color: "var(--text-faint)", minWidth: 90, textAlign: "right" }}>
@@ -697,13 +660,13 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
                     <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Application to evaluate</div>
                     <div style={{ fontSize: 16, fontWeight: 600, marginTop: 2, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <span style={{ fontVariantNumeric: "tabular-nums" }}>{app?.ref_code ?? "—"}</span>
-                      {app?.q11_theme ? <ThemeBadge theme={app.q11_theme} /> : null}
+                      {app?.q11_theme ? <ThemeBadge theme={app.q11_theme as string} /> : null}
                       <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-muted)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px" }}>Anonymous · applicant identity hidden</span>
                     </div>
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-faint)", textAlign: "right" }}>
                     <div>Ref {app?.ref_code} · {app?.id.slice(0, 8)}</div>
-                    <div style={{ fontSize: 11 }}>{app?.q4_session_provides?.slice(0,2).join(" · ") ?? ""}</div>
+                    
                   </div>
                 </div>
                 <div style={{ padding: "20px 20px 24px" }}>{leftContent}</div>
@@ -719,94 +682,17 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
 
           {/* Mobile single column — hidden on desktop via CSS */}
           <div className="review-mobile" style={{ display: "none", maxWidth: 720, margin: "0 auto", padding: "16px 16px 120px", gap: 20 } as React.CSSProperties}>
-            <section style={{ display: "grid", gap: 10 }}>
-              <SectionHeading id="h-m-focus">1 — Facilitation Focus</SectionHeading>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q4 — This session provides</div>
-                <div style={{ marginTop: 6 }}><Chips items={app?.q4_session_provides ?? null} other={app?.q4_session_provides_other ?? null} /></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q5 — Audience</div>
-                <div style={{ marginTop: 6 }}><Chips items={app?.q5_audience ?? null} other={app?.q5_audience_other ?? null} /></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q6 — Who benefits</div>
-                <div style={{ marginTop: 6 }}><Prose>{app?.q6_audience_detail ?? "—"}</Prose></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q11 — Theme</div>
-                <div style={{ marginTop: 6 }}>{app?.q11_theme ? <ThemeBadge theme={app.q11_theme} /> : null}</div>
-              </div>
-              <ScoreControl criterion="focus" value={focusScore} noEvidence={focusNoEv} onChange={onFocusChange} />
-            </section>
-
-            <section style={{ display: "grid", gap: 10, marginTop: 24 }}>
-              <SectionHeading id="h-m-content">2 — Session Content</SectionHeading>
-              <div style={{ background: "var(--accent-soft)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "var(--text-muted)" }}>
-                The session slot is {sessionMinutes} minutes, including the host&apos;s introduction and close.
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q7 — About the session</div>
-                <div style={{ marginTop: 6 }}><Prose large>{app?.q7_about_session ?? "—"}</Prose></div>
-              </div>
-              {app?.q7b_benefits ? (
-                <div><div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q7b — Benefits</div><div style={{ marginTop: 6 }}><Prose>{app.q7b_benefits}</Prose></div></div>
-              ) : null}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q12 — Timekeeping</div>
-                <div style={{ marginTop: 6 }}><Prose>{app?.q12_timekeeping ?? "—"}</Prose></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q8 — Group setup</div>
-                <div style={{ marginTop: 6 }}><Chips items={app?.q8_group_setup ?? null} other={app?.q8_group_setup_other ?? null} /></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q9 — Room layout</div>
-                <div style={{ marginTop: 6 }}><Prose>{app?.q9_room_layout ?? "—"}</Prose></div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>2</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
-        <ScoreControl criterion="content" value={contentScore} noEvidence={contentNoEv} onChange={onContentChange} />
-            </section>
-
-            <section style={{ display: "grid", gap: 10, marginTop: 24 }}>
-              <SectionHeading id="h-m-inter">3 — Interactivity</SectionHeading>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q13 — Participation level</div>
-                <div style={{ marginTop: 6 }}><ParticipationMeter value={app?.q13_participation_level ?? null} /></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q14 — Methods</div>
-                <div style={{ marginTop: 6 }}><Chips items={app?.q14_methods ?? null} other={app?.q14_methods_other ?? null} /></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q15 — First ten minutes</div>
-                <div style={{ marginTop: 6 }}><Prose>{app?.q15_first_ten_minutes ?? "—"}</Prose></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q10 — Delivery mode</div>
-                <div style={{ marginTop: 6 }}><span style={{ fontSize: 14, background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 999, padding: "4px 10px" }}>{app?.q10_delivery_mode ?? "—"}</span></div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>3</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
-        <ScoreControl criterion="interactivity" value={interScore} noEvidence={interNoEv} onChange={onInterChange} />
-            </section>
-
-            <section style={{ display: "grid", gap: 10, marginTop: 24 }}>
-              <SectionHeading id="h-m-cred">4 — Credibility and Experience</SectionHeading>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q16 — Facilitation pathway</div>
-                <div style={{ marginTop: 6 }}><Prose>{app?.q16_pathway ?? "—"}</Prose></div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".03em", textTransform: "uppercase", color: "var(--text-faint)" }}>Q19 — Large groups and English</div>
-                <div style={{ marginTop: 6 }}><Prose>{app?.q19_large_groups_english ?? "—"}</Prose></div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--accent)", color: "var(--accent-text)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700 }}>4</span><span style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)" }}>Score this criterion →</span></div>
-        <ScoreControl criterion="credibility" value={credScore} noEvidence={credNoEv} onChange={onCredChange} />
-            </section>
-
-            <div style={{ marginTop: 16, padding: "10px 12px", background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text-muted)" }}>
-              IAF membership is recorded separately and is not part of this assessment.
-            </div>
+            {FORM_SECTIONS.map((sec, i) => {
+              const sc = scoreFor(sec.criterion);
+              return (
+                <section key={sec.num} style={{ display: "grid", gap: 10, marginTop: i > 0 ? 24 : 0 }}>
+                  <SectionHeading id={`h-m-${sec.criterion}`}>{`Section ${sec.num} — ${sec.title}`}</SectionHeading>
+                  <SectionIntro>{sec.intro}</SectionIntro>
+                  {sec.questions.map((q) => <Answer key={q.num} q={q} app={app} />)}
+                  <ScoreControl criterion={sec.criterion} value={sc.value} noEvidence={sc.noEv} onChange={sc.onChange} />
+                </section>
+              );
+            })}
 
             <div style={{ display: "grid", gap: 12, marginTop: 20 }}>
               <label style={{ display: "grid", gap: 6 }}>

@@ -33,6 +33,12 @@ type Application = {
   q17_iaf_member: string | null;
   q18_iaf_qualification: string | null;
   q19_large_groups_english: string | null;
+  session_title: string | null;
+  theme_reason: string | null;
+  q10_delivery_other: string | null;
+  cofacil_reason: string | null;
+  large_group_experience: string | null;
+  inclusive_design: string | null;
   // identity
   q1_email: string | null;
   q2_ticket_status: string[] | null;
@@ -273,6 +279,7 @@ export default function DetailClient({
       <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
         <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", margin: 0 }}>Application content</h2>
         <div style={{ display: "grid", gap: 14, marginTop: 14, fontSize: 13 }}>
+          {app.session_title ? <div style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontWeight: 600 }}>{app.session_title}</div> : null}
           <div>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>Q4 Provides</div>
             {chips(app.q4_session_provides, app.q4_session_provides_other)}
@@ -283,11 +290,11 @@ export default function DetailClient({
             {app.q6_audience_detail ? <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{app.q6_audience_detail}</div> : null}
           </div>
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Q7 About session {app.redacted_q7 ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(redacted served)</span> : null}</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Q7 About session {app.redacted_q7 ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(identifying details hidden from assessors)</span> : null}</div>
             <div style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-serif)", fontSize: 15, lineHeight: 1.6, maxWidth: "70ch" }}>{app.redacted_q7 ?? app.q7_about_session ?? "—"}</div>
             {app.q7b_benefits || app.redacted_q7b ? (
               <>
-                <div style={{ fontWeight: 600, marginTop: 10, marginBottom: 4 }}>Q7b Benefits {app.redacted_q7b ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(redacted)</span> : null}</div>
+                <div style={{ fontWeight: 600, marginTop: 10, marginBottom: 4 }}>Q7b Benefits {app.redacted_q7b ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(identifying details hidden from assessors)</span> : null}</div>
                 <div style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>{app.redacted_q7b ?? app.q7b_benefits ?? "—"}</div>
               </>
             ) : null}
@@ -315,13 +322,25 @@ export default function DetailClient({
             <div style={{ whiteSpace: "pre-wrap" }}>{app.q15_first_ten_minutes ?? "—"}</div>
           </div>
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Q16 Pathway {app.redacted_q16 ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(redacted)</span> : null}</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Q16 Pathway {app.redacted_q16 ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(identifying details hidden from assessors)</span> : null}</div>
             <div style={{ whiteSpace: "pre-wrap" }}>{app.redacted_q16 ?? app.q16_pathway ?? "—"}</div>
           </div>
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Q19 Large groups / English {app.redacted_q19 ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(redacted)</span> : null}</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Q19 Large groups / English {app.redacted_q19 ? <span style={{ fontWeight: 400, color: "var(--warn)" }}>(identifying details hidden from assessors)</span> : null}</div>
             <div style={{ whiteSpace: "pre-wrap" }}>{app.redacted_q19 ?? app.q19_large_groups_english ?? "—"}</div>
           </div>
+          {([
+            ["2.5 Why aligned to theme", app.theme_reason],
+            ["3.3 Delivery (other)", app.q10_delivery_other],
+            ["3.4 Reason for solo / co-facilitation", app.cofacil_reason],
+            ["4.2 Large group experience", app.large_group_experience],
+            ["5.3 Designing for diverse needs", app.inclusive_design],
+          ] as const).filter(([, v]) => v).map(([label, v]) => (
+            <div key={label}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>
+              <div style={{ whiteSpace: "pre-wrap" }}>{v}</div>
+            </div>
+          ))}
         </div>
       </section>
 

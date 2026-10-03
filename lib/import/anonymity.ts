@@ -12,11 +12,18 @@ export function scanAnonymity(row: NormalizedRow): AnonymityHit[] {
     "q7b_benefits",
     "q16_pathway",
     "q19_large_groups_english",
+    "session_title",
+    "theme_reason",
+    "q10_delivery_other",
+    "cofacil_reason",
+    "large_group_experience",
+    "inclusive_design",
   ];
 
   const fullName = (row.q20_full_name || "").trim();
-  const nameTokens = fullName
-    .split(/\s+/)
+  // Co-facilitator names are free text ("I have several people in mind"), so only capitalised words count.
+  const cofacTokens = (row.q23_cofacilitators || "").split(/[\s,;&]+/).filter((t) => /^[A-Z][a-z]/.test(t) && t.length >= 3 && t !== "The");
+  const nameTokens = [...fullName.split(/\s+/), ...cofacTokens]
     .map((t) => t.trim())
     .filter((t) => t.length >= 3);
 

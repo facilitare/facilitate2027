@@ -64,6 +64,9 @@ export default function RedactionPanel({ applicationId, anonymityFlag, anonymity
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 16, background: "var(--surface)" }}>
       <h3 style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>Anonymity — lead review</h3>
+      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
+        Assessors score applications anonymously. &ldquo;Redacting&rdquo; means saving an edited copy of an answer with identifying details removed (names, organisations, websites). Assessors then see the edited copy; the applicant&rsquo;s original stays here for leads only.
+      </p>
       {anonymityFlag ? (
         <div style={{ background: "#fef3c7", border: "1px solid #f59e0b", borderRadius: 8, padding: 12, marginBottom: 16 }}>
           <strong style={{ color: "#92400e" }}>Flagged for anonymity leak</strong>
@@ -89,7 +92,7 @@ export default function RedactionPanel({ applicationId, anonymityFlag, anonymity
           <div style={{ background: "var(--bg-subtle, #f9fafb)", border: "1px solid var(--border)", borderRadius: 8, padding: 10, fontSize: 13, whiteSpace: "pre-wrap", minHeight: 32 }}>
             {f.original ?? <em style={{ color: "var(--text-faint)" }}>— empty —</em>}
           </div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", margin: "8px 0 4px" }}>Redacted (served to assessors):</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", margin: "8px 0 4px" }}>Version assessors will see — edit to remove names, organisations, websites or anything else that reveals who the applicant is. Leave unchanged if nothing needs hiding.</div>
           <textarea
             value={values[f.key]}
             onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}

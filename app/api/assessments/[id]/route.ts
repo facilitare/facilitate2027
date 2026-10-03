@@ -65,7 +65,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return Response.json({ error: "Not your assessment", code: "forbidden" }, { status: 403 });
   }
 
-  // Application — round1 without q17/q18, with redaction substitution
+  // Application — round1 fields with redaction substitution
   const appRows = await sql`
     select
       id, ref_code, wave_id, q11_theme,
@@ -75,7 +75,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       q9_room_layout, q10_delivery_mode, q12_timekeeping,
       q13_participation_level, q14_methods, q14_methods_other,
       q15_first_ten_minutes, q16_pathway,
-      q19_large_groups_english,
+      q19_large_groups_english, q17_iaf_member, q18_iaf_qualification,
+      session_title, theme_reason, q10_delivery_other, cofacil_reason,
+      large_group_experience, inclusive_design,
       redacted_q7, redacted_q7b, redacted_q16, redacted_q19
     from applications where id = ${assessment.application_id} limit 1
   `;
@@ -104,8 +106,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     q15_first_ten_minutes: row.q15_first_ten_minutes,
     q16_pathway: row.redacted_q16 ?? row.q16_pathway,
     q19_large_groups_english: row.redacted_q19 ?? row.q19_large_groups_english,
+    // Shown for information only (not scored) — decided Oct 2026 after practice round 1.
+    q17_iaf_member: row.q17_iaf_member,
+    q18_iaf_qualification: row.q18_iaf_qualification,
+    session_title: row.session_title,
+    theme_reason: row.theme_reason,
+    q10_delivery_other: row.q10_delivery_other,
+    cofacil_reason: row.cofacil_reason,
+    large_group_experience: row.large_group_experience,
+    inclusive_design: row.inclusive_design,
   };
-  // Deliberately absent: q17_iaf_member, q18_iaf_qualification
 
   // Settings: session_minutes + iaf_bonus_mode
   let sessionMinutes = 50;

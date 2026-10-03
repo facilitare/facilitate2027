@@ -29,6 +29,12 @@ const ROUND1_COLUMNS = [
   "q17_iaf_member",
   "q18_iaf_qualification",
   "q19_large_groups_english",
+  "session_title",
+  "theme_reason",
+  "q10_delivery_other",
+  "cofacil_reason",
+  "large_group_experience",
+  "inclusive_design",
 ] as const;
 
 function getSessionFromRequest(req: Request): string | null {
@@ -96,6 +102,8 @@ export async function GET(
       q15_first_ten_minutes, q16_pathway,
       q17_iaf_member, q18_iaf_qualification,
       q19_large_groups_english,
+      session_title, theme_reason, q10_delivery_other, cofacil_reason,
+      large_group_experience, inclusive_design,
       redacted_q7, redacted_q7b, redacted_q16, redacted_q19,
       anonymity_flag, anonymity_notes
     from applications

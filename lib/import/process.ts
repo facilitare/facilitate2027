@@ -247,7 +247,8 @@ export async function processImport(opts: ProcessOptions): Promise<ImportReport>
           q1_email, q2_ticket_status, q3_availability,
           q20_full_name, q21_bio, q22_headshot_url, q23_cofacilitators,
           q24_region, q25_ethnicity, q26_career_stage, q27_under_35, q28_gender,
-          iaf_standing, anonymity_flag, anonymity_notes
+          iaf_standing, anonymity_flag, anonymity_notes,
+          q10_delivery_other, session_title, theme_reason, cofacil_reason, large_group_experience, inclusive_design
         ) values (
           ${opts.waveId}, ${ref}, ${n.submitted_at ? new Date(n.submitted_at) as any : null}, now(), ${batchId}, 'imported',
           ${n.q4_session_provides as any}, ${n.q4_other},
@@ -260,7 +261,8 @@ export async function processImport(opts: ProcessOptions): Promise<ImportReport>
           ${n.q1_email}, ${n.q2_ticket_status as any}, ${n.q3_availability as any},
           ${n.q20_full_name}, ${n.q21_bio}, ${n.q22_headshot_url}, ${n.q23_cofacilitators},
           ${n.q24_region}, ${n.q25_ethnicity}, ${n.q26_career_stage}, ${n.q27_under_35}, ${n.q28_gender},
-          ${iafStanding}, ${anonFlag}, ${anonNotes}
+          ${iafStanding}, ${anonFlag}, ${anonNotes},
+          ${n.q10_delivery_other}, ${n.session_title}, ${n.theme_reason}, ${n.cofacil_reason}, ${n.large_group_experience}, ${n.inclusive_design}
         )
       `;
       importedCount++;

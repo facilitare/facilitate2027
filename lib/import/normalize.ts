@@ -50,6 +50,12 @@ export interface NormalizedRow {
   q26_career_stage: string | null;
   q27_under_35: boolean | null;
   q28_gender: string | null;
+  q10_delivery_other: string | null;
+  session_title: string | null;
+  theme_reason: string | null;
+  cofacil_reason: string | null;
+  large_group_experience: string | null;
+  inclusive_design: string | null;
 }
 
 export interface NormalizeResult {
@@ -110,6 +116,28 @@ function partitionKnown(values: string[], known: string[]): { known: string[]; u
     }
   }
   return { known: knownOut, unknown: unknownOut };
+}
+
+/**
+ * Pull known checkbox options out of a Google Forms multi-select cell before
+ * splitting the rest on commas — several v2 options contain commas themselves.
+ * Returns options in the applicant's original casing.
+ */
+function extractMulti(raw: string | undefined | null, known: string[]): { known: string[]; unknown: string[] } {
+  if (!raw || !raw.trim()) return { known: [], unknown: [] };
+  let rest = raw;
+  const found: { idx: number; text: string }[] = [];
+  for (const k of [...known].sort((a, b) => b.length - a.length)) {
+    const i = rest.toLowerCase().indexOf(k);
+    if (i === -1) continue;
+    found.push({ idx: i, text: rest.slice(i, i + k.length) });
+    rest = rest.slice(0, i) + "\u0000".repeat(k.length) + rest.slice(i + k.length);
+  }
+  found.sort((a, b) => a.idx - b.idx);
+  const unknown = splitMulti(rest.replace(/\u0000+/g, ";"))
+    .map((p) => p.replace(/^[,;\s]+|[,;\s]+$/g, ""))
+    .filter(Boolean);
+  return { known: found.map((f) => f.text), unknown };
 }
 
 function normalizeEnum(field: string, raw: string | null | undefined): { value: string | null; error?: string } {
@@ -213,6 +241,12 @@ export function normalizeRow(
     q26_career_stage: null,
     q27_under_35: null,
     q28_gender: null,
+    q10_delivery_other: null,
+    session_title: null,
+    theme_reason: null,
+    cofacil_reason: null,
+    large_group_experience: null,
+    inclusive_design: null,
   };
 
   // submitted_at
@@ -231,8 +265,7 @@ export function normalizeRow(
   {
     const raw = get("q4_session_provides");
     if (raw) {
-      const parts = splitMulti(raw);
-      const { known, unknown } = partitionKnown(parts, KNOWN_Q4);
+      const { known, unknown } = extractMulti(raw, KNOWN_Q4);
       row.q4_session_provides = known.length ? known : null;
       row.q4_other = unknown.length ? unknown.join("; ") : null;
       for (const u of unknown) unmapped.push({ field: "q4_session_provides", value: u });
@@ -242,8 +275,7 @@ export function normalizeRow(
   {
     const raw = get("q5_audience");
     if (raw) {
-      const parts = splitMulti(raw);
-      const { known, unknown } = partitionKnown(parts, KNOWN_Q5);
+      const { known, unknown } = extractMulti(raw, KNOWN_Q5);
       row.q5_audience = known.length ? known : null;
       row.q5_other = unknown.length ? unknown.join("; ") : null;
       for (const u of unknown) unmapped.push({ field: "q5_audience", value: u });
@@ -258,8 +290,7 @@ export function normalizeRow(
   {
     const raw = get("q8_group_setup");
     if (raw) {
-      const parts = splitMulti(raw);
-      const { known, unknown } = partitionKnown(parts, KNOWN_Q8);
+      const { known, unknown } = extractMulti(raw, KNOWN_Q8);
       row.q8_group_setup = known.length ? known : null;
       row.q8_other = unknown.length ? unknown.join("; ") : null;
       for (const u of unknown) unmapped.push({ field: "q8_group_setup", value: u });
@@ -274,7 +305,8 @@ export function normalizeRow(
     if (raw != null) {
       const { value, error } = normalizeEnum("q10_delivery_mode", raw);
       if (error) {
-        malformed.push({ field: "q10_delivery_mode", value: raw, reason: error });
+        // Form v2 has an "Other:" free-text option — keep the text instead of rejecting the row.
+        row.q10_delivery_other = raw;
       } else {
         row.q10_delivery_mode = value;
       }
@@ -319,8 +351,7 @@ export function normalizeRow(
   {
     const raw = get("q14_methods");
     if (raw) {
-      const parts = splitMulti(raw);
-      const { known, unknown } = partitionKnown(parts, KNOWN_Q14);
+      const { known, unknown } = extractMulti(raw, KNOWN_Q14);
       row.q14_methods = known.length ? known : null;
       row.q14_other = unknown.length ? unknown.join("; ") : null;
       for (const u of unknown) unmapped.push({ field: "q14_methods", value: u });
@@ -372,13 +403,20 @@ export function normalizeRow(
   }
   row.q28_gender = get("q28_gender");
 
+  // Form v2 fields. The inclusion question was reworded mid-collection, so the
+  // sheet can hold both the old and the new column — prefer the new one.
+  row.session_title = get("session_title");
+  row.theme_reason = get("theme_reason");
+  row.cofacil_reason = get("cofacil_reason");
+  row.large_group_experience = get("large_group_experience");
+  row.inclusive_design = get("inclusive_design") ?? get("inclusive_design_legacy");
+
   // q2, q3 multi
   {
     const raw = get("q2_ticket_status");
     if (raw) {
-      const parts = splitMulti(raw);
-      const { known, unknown } = partitionKnown(parts, KNOWN_Q2);
-      row.q2_ticket_status = known.length ? known : parts;
+      const { known, unknown } = extractMulti(raw, KNOWN_Q2);
+      row.q2_ticket_status = known.length ? known : unknown;
       if (unknown.length) {
         row.q2_other = unknown.join("; ");
         for (const u of unknown) unmapped.push({ field: "q2_ticket_status", value: u });
@@ -388,9 +426,8 @@ export function normalizeRow(
   {
     const raw = get("q3_availability");
     if (raw) {
-      const parts = splitMulti(raw);
-      const { known, unknown } = partitionKnown(parts, KNOWN_Q3);
-      row.q3_availability = known.length ? known : parts;
+      const { known, unknown } = extractMulti(raw, KNOWN_Q3);
+      row.q3_availability = known.length ? known : unknown;
       if (unknown.length) {
         row.q3_other = unknown.join("; ");
         for (const u of unknown) unmapped.push({ field: "q3_availability", value: u });

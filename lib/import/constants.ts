@@ -29,7 +29,13 @@ export type FieldKey =
   | "q25_ethnicity"
   | "q26_career_stage"
   | "q27_under_35"
-  | "q28_gender";
+  | "q28_gender"
+  | "session_title"
+  | "theme_reason"
+  | "cofacil_reason"
+  | "large_group_experience"
+  | "inclusive_design"
+  | "inclusive_design_legacy";
 
 export interface FieldDef {
   field: FieldKey;
@@ -39,27 +45,27 @@ export interface FieldDef {
 
 export const FIELD_DEFS: FieldDef[] = [
   { field: "submitted_at", aliases: ["timestamp"], type: "timestamptz" },
-  { field: "q1_email", aliases: ["username"], type: "text" },
+  { field: "q1_email", aliases: ["username", "email address"], type: "text" },
   { field: "q2_ticket_status", aliases: ["before submitting this application", "before submitting"], type: "text[]" },
   { field: "q3_availability", aliases: ["the conference runs from friday"], type: "text[]" },
   { field: "q4_session_provides", aliases: ["will this session provide", "what facilitation skills and expertise", "facilitation skills and expertise will be the focus"], type: "text[]" },
-  { field: "q5_audience", aliases: ["who will find your session of most value", "who is this session most suitable for"], type: "text[]" },
-  { field: "q6_audience_detail", aliases: ["briefly describe in more detailed who would most benefit", "briefly describe in more detailed"], type: "text" },
-  { field: "q7_about_session", aliases: ["outline what your proposed session is about"], type: "text" },
-  { field: "q7b_benefits", aliases: ["session benefits"], type: "text" },
-  { field: "q8_group_setup", aliases: ["imagining your planned session, what would be your ideal set up", "imagining your planned session", "ideal set up"], type: "text[]" },
+  { field: "q5_audience", aliases: ["who will find your session of most value"], type: "text[]" },
+  { field: "q6_audience_detail", aliases: ["briefly describe in more detailed who would most benefit", "briefly describe in more detailed", "who is this session most suitable for"], type: "text" },
+  { field: "q7_about_session", aliases: ["outline what your proposed session is about", "what is your session about"], type: "text" },
+  { field: "q7b_benefits", aliases: ["session benefits", "what are the benefits for participants"], type: "text" },
+  { field: "q8_group_setup", aliases: ["imagining your planned session, what would be your ideal set up", "imagining your planned session", "ideal set up", "what is your ideal room setup"], type: "text[]" },
   { field: "q9_room_layout", aliases: ["tell us about the room layout"], type: "text" },
   { field: "q9b_furniture", aliases: ["what do you need in terms of tables and chairs", "tables and chairs"], type: "text" },
-  { field: "q10_delivery_mode", aliases: ["are you planning to deliver this session solo", "are you planning to facilitate alone"], type: "enum" },
-  { field: "q11_theme", aliases: ["which theme do you feel your session is most aligned to", "which of the conference themes"], type: "enum" },
-  { field: "q12_timekeeping", aliases: ["what do you normally do to keep your workshops", "what do you do normally to ensure that you keep to allocated time", "what do you normally do to keep"], type: "text" },
+  { field: "q10_delivery_mode", aliases: ["are you planning to deliver this session solo", "are you planning to facilitate alone", "are you planning to facilitate solo or with others"], type: "enum" },
+  { field: "q11_theme", aliases: ["which theme do you feel your session is most aligned to", "which of the conference themes", "which of these conference themes"], type: "enum" },
+  { field: "q12_timekeeping", aliases: ["what do you normally do to keep your workshops", "what do you do normally to ensure that you keep to allocated time", "what do you normally do to keep", "how do you keep your sessions on schedule"], type: "text" },
   { field: "q13_participation_level", aliases: ["amount of participation in my session", "amount of participation"], type: "int" },
-  { field: "q14_methods", aliases: ["what methods are you likely to consider using", "please select the methods you may use"], type: "text[]" },
-  { field: "q15_first_ten_minutes", aliases: ["give an example of something you do in the first 1-10 mins", "first 10 minutes of a session", "first 1-10 mins"], type: "text" },
+  { field: "q14_methods", aliases: ["what methods are you likely to consider using", "please select the methods you may use", "what methods might you use to support participation"], type: "text[]" },
+  { field: "q15_first_ten_minutes", aliases: ["give an example of something you do in the first 1-10 mins", "first 10 minutes of a session", "first 1-10 mins", "what is one technique you use in the first 10 minutes"], type: "text" },
   { field: "q16_pathway", aliases: ["tell us briefly about your facilitation journey", "tell us briefly about your facilitation pathway"], type: "text" },
   { field: "q17_iaf_member", aliases: ["are you a member of iaf"], type: "enum" },
   { field: "q18_iaf_qualification", aliases: ["which of these iaf qualifications do you have", "which (if any) of these iaf accreditations do you have", "iaf accreditations"], type: "text" },
-  { field: "q19_large_groups_english", aliases: ["many conference participants will not speak english as their first language", "tell us about your experiences facilitating large group"], type: "text" },
+  { field: "q19_large_groups_english", aliases: ["many conference participants will not speak english as their first language", "tell us about your experiences facilitating large group", "do you have experience facilitating non-native english speakers"], type: "text" },
   { field: "q20_full_name", aliases: ["what is your full name"], type: "text" },
   { field: "q21_bio", aliases: ["give a brief description of yourself"], type: "text" },
   { field: "q22_headshot_url", aliases: ["add a head shot"], type: "text" },
@@ -69,6 +75,13 @@ export const FIELD_DEFS: FieldDef[] = [
   { field: "q26_career_stage", aliases: ["where would you describe yourself in terms of your career stage"], type: "text" },
   { field: "q27_under_35", aliases: ["are you under 35"], type: "boolean" },
   { field: "q28_gender", aliases: ["what gender do you identify with"], type: "text" },
+  // Form v2 (Oct 2026) — see plan/11-FORM-2027-V2.md
+  { field: "session_title", aliases: ["what is the working title for your session"], type: "text" },
+  { field: "theme_reason", aliases: ["explain why you believe that your session is aligned"], type: "text" },
+  { field: "cofacil_reason", aliases: ["what is the reason for your choice of solo or co-facilitation"], type: "text" },
+  { field: "large_group_experience", aliases: ["your large group experiences"], type: "text" },
+  { field: "inclusive_design", aliases: ["give an example of what you typically do when designing a workshop"], type: "text" },
+  { field: "inclusive_design_legacy", aliases: ["how do you create inclusive workshops"], type: "text" },
 ];
 
 // Known multi-select option sets (lowercase normalized for matching)
@@ -79,6 +92,12 @@ export const KNOWN_Q4 = [
   "provide practice in using a skill or technique",
   "strengthen facilitation practice",
   "facilitation specific skills",
+  "techniques that will support inclusive practice",
+  "give a facilitated experience using an approach or tool",
+  "provide insight into a new or emerging facilitation tool or technique",
+  "provide the space to explore topics that we rarely have the opportunity to discuss as facilitators",
+  "the skills in influencing others about the value of facilitation",
+  "exploring ways of facilitating anti-racist, anti-discriminatory practice and allyship",
 ].map((s) => s.toLowerCase());
 
 export const KNOWN_Q5 = [
@@ -103,6 +122,11 @@ export const KNOWN_Q8 = [
   "above 50",
   "fully flexible",
   "needs to be under 30",
+  "50 people sat in small groups of chairs (with no tables)",
+  "up to 50 people in a circle",
+  "up to 50 people around the edge of the room with a large open space in the middle of the room",
+  "ideally i would prefer a session for a group size between 20-25",
+  "i am planning an \"walk and talk\" session that will leave the venue for my session",
 ].map((s) => s.toLowerCase());
 
 export const KNOWN_Q14 = [
@@ -122,6 +146,9 @@ export const KNOWN_Q2 = [
   "i have already paid and registered for the conference",
   "if selected i know i must order a ticket for the conference and will do this if my session is confirmed",
   "if i have a co-facilitator they also will need to register to attend the conference",
+  "i have already bought a ticket for the conference on 16/17th april",
+  "i have already bought a ticket for the conference",
+  "if i have a co-facilitator they also will need to buy a ticket to attend the conference",
 ].map((s) => s.toLowerCase());
 
 export const KNOWN_Q3 = [
@@ -129,6 +156,8 @@ export const KNOWN_Q3 = [
   "saturday x april from 9.30 to 16.30",
   "friday 9  april from 9.30 to 16.30",
   "saturday 10 april from 9.00 to 16.30",
+  "friday 16 april from 9.30 to 16.30",
+  "saturday 17 april from 9.00 to 16.30",
 ].map((s) => s.toLowerCase());
 
 export function normalizeEnumValue(v: string): string {
@@ -150,6 +179,8 @@ export const ENUM_MAPS: Record<string, Record<string, string>> = {
     one_co_facilitator: "one_cofacilitator",
     two_or_more_cofacilitators: "two_or_more_cofacilitators",
     two_or_more: "two_or_more_cofacilitators",
+    with_one_co_facilitator: "one_cofacilitator",
+    with_2_3_co_facilitators: "two_or_more_cofacilitators",
   },
   q11_theme: {
     craft: "craft",

@@ -101,7 +101,7 @@ export function ScoreControl({ criterion, value, noEvidence, onChange, defaultEx
       </div>
       <label className="flex items-center gap-2 mt-3 text-[12.5px] text-[var(--text-muted)] cursor-pointer">
         <input type="checkbox" checked={noEvidence} onChange={(e) => toggleNoEvidence(e.target.checked)} className="accent-[var(--accent)] w-[15px] h-[15px]" />
-        No evidence provided in the application
+        No evidence provided — the question was left blank
       </label>
       {noEvidence && <p className="text-[11.5px] text-[var(--text-faint)] mt-1">Score forced to 0 — options disabled.</p>}
     </div>

@@ -44,6 +44,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       q4_session_provides, q4_session_provides_other, q5_audience, q5_audience_other, q6_audience_detail,
       q7_about_session, q7b_benefits, q8_group_setup, q8_group_setup_other, q9_room_layout, q9b_furniture, q10_delivery_mode, q11_theme, q12_timekeeping,
       q13_participation_level, q14_methods, q14_methods_other, q15_first_ten_minutes, q16_pathway, q17_iaf_member, q18_iaf_qualification, q19_large_groups_english,
+      session_title, theme_reason, q10_delivery_other, cofacil_reason, large_group_experience, inclusive_design,
       q1_email, q2_ticket_status, q3_availability, q20_full_name, q21_bio, q22_headshot_url, q23_cofacilitators, q24_region, q25_ethnicity, q26_career_stage, q27_under_35, q28_gender,
       iaf_standing, anonymity_flag, anonymity_notes, redacted_q7, redacted_q7b, redacted_q16, redacted_q19, redacted_by, redacted_at,
       created_at, updated_at

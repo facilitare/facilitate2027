@@ -31,6 +31,12 @@ export const ROUND1_FIELDS = [
   "q17_iaf_member",
   "q18_iaf_qualification",
   "q19_large_groups_english",
+  "session_title",
+  "theme_reason",
+  "q10_delivery_other",
+  "cofacil_reason",
+  "large_group_experience",
+  "inclusive_design",
 ] as const;
 
 export const IDENTITY_FIELDS = [
