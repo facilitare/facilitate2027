@@ -143,155 +143,135 @@ export default function ImportPage() {
     }
   }
 
-  return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <h1 className="text-2xl font-semibold">CSV Import</h1>
-      <ol className="text-sm text-[var(--text-muted)] list-decimal pl-5 space-y-1">
-        <li>In Google Sheets (form responses): <strong>File → Download → Comma-separated values (.csv)</strong>.</li>
-        <li><strong>Choose file</strong> below and pick that CSV.</li>
-        <li>Press <strong>Check file</strong> — nothing is saved yet; you get a report of what would be imported.</li>
-        <li>If the report looks right, press <strong>Import</strong>. Applicants already imported (same email) are skipped automatically.</li>
-      </ol>
-
-      <div className="border rounded-lg p-4 space-y-4 bg-[var(--surface)] border-[var(--border)]">
-        <label className="block">
-          <span className="text-sm font-medium">Step 2 — choose the CSV file</span>
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            onChange={handleFileChange}
-            className="mt-1 block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-[var(--accent)] file:text-[var(--accent-text)] file:font-semibold file:cursor-pointer"
-          />
-        </label>
-        {headers.length > 0 && (
-          <div className="text-xs text-[var(--text-muted)]">{headers.length} columns detected, {headers.filter(h=>h.trim()!=="").length} non-empty headers</div>
-        )}
-      </div>
-
-      {headers.length > 0 && mapping && (
-        <div className="border rounded-lg p-4 space-y-4 bg-[var(--surface)] border-[var(--border)]">
-          <details><summary className="text-sm font-medium cursor-pointer">Advanced: how form questions are matched to app fields (only change if something is unmapped)</summary>
-          <h2 className="text-lg font-medium mt-3">Mapping — auto-matched with manual override</h2>
-          <p className="text-xs text-[var(--text-muted)]">
-            Auto-matching uses first 40 chars, case-insensitive, starts-with fuzzy. Use the dropdown to override. Unmapped headers will be ignored; unmapped multi-select values go to <code>_other</code> and appear in the report.
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b bg-[var(--surface-sunk)]">
-                  <th className="text-left p-2">#</th>
-                  <th className="text-left p-2">CSV Header (first 60 chars)</th>
-                  <th className="text-left p-2">Auto-matched field</th>
-                  <th className="text-left p-2">Manual override</th>
-                </tr>
-              </thead>
-              <tbody>
-                {headers.filter(h=>h.trim()!=="").map((h, idx) => {
-                  const autoField = mapping.headerToField.get(h) ?? null;
-                  const effField = headerToFieldEff.get(h) ?? null;
-                  return (
-                    <tr key={h+idx} className="border-b">
-                      <td className="p-2 text-xs">{idx+1}</td>
-                      <td className="p-2 font-mono text-xs max-w-[360px] truncate" title={h}>{h.slice(0,60)}{h.length>60?"…":""}</td>
-                      <td className="p-2 text-xs">{autoField ? <span className="px-2 py-1 rounded bg-green-100 text-green-800">{autoField}</span> : <span className="px-2 py-1 rounded bg-amber-100 text-amber-800">unmapped</span>}</td>
-                      <td className="p-2">
-                        <select
-                          value={effField ?? "__unmapped"}
-                          onChange={(e) => handleHeaderOverride(h, e.target.value)}
-                          className="border rounded px-2 py-1 text-xs w-[220px]"
-                        >
-                          <option value="__unmapped">— unmapped —</option>
-                          {FIELD_DEFS.map((d) => (
-                            <option key={d.field} value={d.field}>{d.field} ({d.type})</option>
-                          ))}
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          </details>
-          {unmappedHeadersEff.length > 0 && (
-            <div className="text-xs">
-              <span className="font-medium">Unmapped headers ({unmappedHeadersEff.length}):</span>{" "}
-              <span className="font-mono">{unmappedHeadersEff.join(" | ").slice(0,300)}</span>
-            </div>
-          )}
-
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={doDryRun}
-              disabled={loading !== null}
-              className="px-4 py-2 rounded bg-[var(--surface)] text-[var(--text)] border border-[var(--border-strong)] font-medium cursor-pointer disabled:opacity-50"
-            >
-              {loading === "dry" ? "Checking…" : "Step 3 — Check file"}
-            </button>
-            <button
-              onClick={doCommit}
-              disabled={loading !== null || !report}
-              className="px-4 py-2 rounded bg-[var(--accent)] text-[var(--accent-text)] font-semibold cursor-pointer disabled:opacity-50"
-              title={!report ? "Check the file first" : undefined}
-            >
-              {loading === "commit" ? "Importing…" : "Step 4 — Import"}
-            </button>
-          </div>
-          {error && <div className="text-sm text-red-600 border border-red-200 bg-red-50 p-2 rounded">{error}</div>}
-        </div>
-      )}
-
-      {report && (
-        <div className="border rounded-lg p-4 space-y-3 bg-[var(--surface)] border-[var(--border)]">
-          <h2 className="text-lg font-medium">Report {report.importedCount !== undefined && report.importedCount > 0 ? "— imported ✓" : "— check only, nothing saved yet"}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            <div className="border rounded p-3">
-              <div className="text-[var(--text-muted)]">Rows read</div>
-              <div className="text-xl font-semibold">{report.rowsRead}</div>
-            </div>
-            <div className="border rounded p-3">
-              <div className="text-[var(--text-muted)]">Valid rows</div>
-              <div className="text-xl font-semibold">{report.rowsValid}</div>
-            </div>
-            <div className="border rounded p-3">
-              <div className="text-[var(--text-muted)]">Imported</div>
-              <div className="text-xl font-semibold">{report.importedCount ?? 0}</div>
-            </div>
-            <div className="border rounded p-3">
-              <div className="text-[var(--text-muted)]">Unmapped headers</div>
-              <div className="text-xl font-semibold">{report.unmappedHeaders.length}</div>
-            </div>
-          </div>
-
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="font-medium">Duplicates ({report.duplicates.length}):</span>{" "}
-              {report.duplicates.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.duplicates.map((d) => `row ${d.row} ${d.email}`).join(", ")}
-            </div>
-            <div>
-              <span className="font-medium">Unmapped values ({report.unmapped.length}):</span>{" "}
-              {report.unmapped.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.unmapped.map((u) => `row ${u.row} ${u.field}="${u.value}"`).join(", ")}
-            </div>
-            <div>
-              <span className="font-medium">Malformed enums ({report.malformed.length}):</span>{" "}
-              {report.malformed.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`).join(", ")}
-            </div>
-            <div>
-              <span className="font-medium">Anonymity flags ({report.anonymityFlags.length}):</span>{" "}
-              {report.anonymityFlags.length === 0 ? <span className="text-[var(--text-muted)]">none</span> : report.anonymityFlags.map((a) => `row ${a.row} ${a.field}: ${a.reason}`).join("; ")}
-            </div>
-            {report.refCodes && report.refCodes.length > 0 && (
-              <div>
-                <span className="font-medium">Ref codes:</span> {report.refCodes.join(", ")}
-              </div>
-            )}
-            <p className="text-xs text-[var(--text-muted)] pt-2">
-              Anonymity scan is heuristic — name tokens (≥3 chars), email local part (≥4 chars), URLs/domains, self-reference (&quot;I am …&quot;, &quot;my company/firm/consultancy&quot;). Flagged applications require redaction or dismissal before assignment.
-            </p>
-          </div>
-        </div>
-      )}
+  const card: React.CSSProperties = { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 20, boxShadow: "var(--shadow-sm)" };
+  const stepNum = (n: number, active: boolean): React.CSSProperties => ({ width: 30, height: 30, borderRadius: 999, display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14, flexShrink: 0, background: active ? "var(--accent)" : "var(--surface-sunk)", color: active ? "var(--accent-text)" : "var(--text-faint)", border: active ? "none" : "1px solid var(--border)" });
+  const bigBtn = (enabled: boolean, primary: boolean): React.CSSProperties => ({ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 20px", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: enabled ? "pointer" : "not-allowed", opacity: enabled ? 1 : 0.45, background: primary ? "var(--accent)" : "var(--surface)", color: primary ? "var(--accent-text)" : "var(--accent)", border: primary ? "none" : "2px solid var(--accent)" });
+  const committed = !!report && (report.importedCount ?? 0) > 0;
+  const stat = (label: string, value: number, warn = false) => (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, background: warn && value > 0 ? "var(--warn-soft)" : "var(--surface-sunk)" }}>
+      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 700 }}>{value}</div>
     </div>
+  );
+  const line = (label: string, items: string[]) => (
+    <div style={{ fontSize: 13 }}><strong>{label} ({items.length}):</strong> <span style={{ color: "var(--text-muted)" }}>{items.length ? items.join("; ") : "none"}</span></div>
+  );
+
+  return (
+    <main style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px 16px 120px" }}>
+      <div style={{ maxWidth: 820, margin: "0 auto", display: "grid", gap: 16 }}>
+        <a href="/" style={{ fontSize: 13, color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>← Back to dashboard</a>
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>Import applications</h1>
+        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 14 }}>Four steps. Nothing is saved until you press <strong>Import</strong> in step 4.</p>
+
+        {/* Step 1 */}
+        <section style={{ ...card, display: "flex", gap: 14 }}>
+          <div style={stepNum(1, true)}>1</div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>Download the responses from Google Sheets</div>
+            <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Open the form responses spreadsheet → <strong>File → Download → Comma-separated values (.csv)</strong>.</div>
+          </div>
+        </section>
+
+        {/* Step 2 */}
+        <section style={{ ...card, display: "flex", gap: 14 }}>
+          <div style={stepNum(2, true)}>2</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>Choose the CSV file</div>
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <label style={bigBtn(true, !file)}>
+                📂 {file ? "Choose a different file" : "Choose CSV file…"}
+                <input type="file" accept=".csv,text/csv" onChange={handleFileChange} style={{ display: "none" }} />
+              </label>
+              {file ? <span style={{ fontSize: 14 }}>✓ <strong>{file.name}</strong> <span style={{ color: "var(--text-faint)" }}>({headers.filter((h) => h.trim() !== "").length} columns)</span></span> : <span style={{ fontSize: 14, color: "var(--text-faint)" }}>No file chosen yet</span>}
+            </div>
+          </div>
+        </section>
+
+        {/* Step 3 */}
+        <section style={{ ...card, display: "flex", gap: 14 }}>
+          <div style={stepNum(3, !!file)}>3</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>Check the file</div>
+            <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Shows what would be imported. Nothing is saved.</div>
+            <div style={{ marginTop: 12 }}>
+              <button onClick={doDryRun} disabled={!file || loading !== null} style={bigBtn(!!file && loading === null, !!file && !report)}>
+                {loading === "dry" ? "Checking…" : "🔍 Check file"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {report ? (
+          <section style={{ ...card, borderColor: committed ? "var(--score-2)" : "var(--border)", background: committed ? "var(--score-2-soft)" : "var(--surface)" }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{committed ? `✅ Imported ${report.importedCount} application(s)` : "Check result — nothing saved yet"}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginTop: 12 }}>
+              {stat("Rows in file", report.rowsRead)}
+              {stat("Ready to import", report.rowsValid)}
+              {stat("Already imported (skipped)", report.duplicates.length, true)}
+              {stat("Rows with errors", report.malformed.length, true)}
+            </div>
+            <div style={{ display: "grid", gap: 6, marginTop: 14 }}>
+              {line("Possible identity leaks to review", report.anonymityFlags.map((a) => `row ${a.row} ${a.field}: ${a.reason}`))}
+              {line("Answers under “Other”", report.unmapped.map((u) => `row ${u.row}: ${u.value}`))}
+              {report.malformed.length ? line("Errors", report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`)) : null}
+              {report.refCodes && report.refCodes.length ? line("Reference codes", report.refCodes) : null}
+            </div>
+            {committed ? <a href="/" style={{ ...bigBtn(true, true), marginTop: 16, textDecoration: "none" }}>Go to dashboard →</a> : null}
+          </section>
+        ) : null}
+
+        {/* Step 4 */}
+        <section style={{ ...card, display: "flex", gap: 14 }}>
+          <div style={stepNum(4, !!report && !committed)}>4</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 16 }}>Import</div>
+            <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Saves the applications. Applicants already imported (same email) are skipped, so it is safe to import the same sheet again later.</div>
+            <div style={{ marginTop: 12 }}>
+              <button onClick={doCommit} disabled={!report || committed || loading !== null} style={bigBtn(!!report && !committed && loading === null, true)} title={!report ? "Check the file first (step 3)" : undefined}>
+                {loading === "commit" ? "Importing…" : committed ? "✓ Imported" : "⬆ Import applications"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {error ? <div style={{ ...card, borderColor: "var(--danger)", background: "var(--danger-soft)", color: "var(--danger)", fontSize: 14 }}>{error}</div> : null}
+
+        {headers.length > 0 && mapping ? (
+          <details style={card}>
+            <summary style={{ cursor: "pointer", fontSize: 14, fontWeight: 600 }}>Advanced: how form columns are matched ({unmappedHeadersEff.length} column(s) ignored)</summary>
+            <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Only change this if a form question shows as &ldquo;ignored&rdquo; but should be imported.</p>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "var(--surface-sunk)", textAlign: "left" }}>
+                    <th style={{ padding: 6 }}>Form column</th>
+                    <th style={{ padding: 6 }}>Imported as</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {headers.filter((h) => h.trim() !== "").map((h, idx) => {
+                    const effField = headerToFieldEff.get(h) ?? null;
+                    return (
+                      <tr key={h + idx} style={{ borderTop: "1px solid var(--border)" }}>
+                        <td style={{ padding: 6, maxWidth: 380 }} title={h}>{h.slice(0, 70)}{h.length > 70 ? "…" : ""}</td>
+                        <td style={{ padding: 6 }}>
+                          <select value={effField ?? "__unmapped"} onChange={(e) => handleHeaderOverride(h, e.target.value)} style={{ fontSize: 12, padding: 4, borderRadius: 6, border: "1px solid var(--border)", background: effField ? "var(--surface)" : "var(--warn-soft)", color: "var(--text)" }}>
+                            <option value="__unmapped">— ignored —</option>
+                            {FIELD_DEFS.map((d) => (
+                              <option key={d.field} value={d.field}>{d.field}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ) : null}
+      </div>
+    </main>
   );
 }
