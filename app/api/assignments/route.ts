@@ -78,3 +78,24 @@ export async function POST(req: Request) {
 
   return Response.json({ assignment: inserted[0] }, { status: 201 });
 }
+
+// Lead-only overview for the Assignments page: every application with its assessments.
+export async function GET(req: Request) {
+  const token = getToken(req);
+  if (!token) return Response.json({ error: "Not authenticated", code: "unauthorized" }, { status: 401 });
+  const session = await verifySession(token);
+  if (!session || !session.authed || !session.evaluatorId) {
+    return Response.json({ error: "Not authenticated", code: "unauthorized" }, { status: 401 });
+  }
+  const sql = getSql();
+  const me = (await sql`select role from evaluators where id = ${session.evaluatorId} and active = true`) as any[];
+  if (me[0]?.role !== "lead") return Response.json({ error: "Only leads can manage assignments", code: "forbidden" }, { status: 403 });
+
+  const applications = await sql`
+    select id, ref_code, session_title, status, anonymity_flag, anonymity_notes
+    from applications order by ref_code asc
+  `;
+  const assessments = await sql`select id, application_id, evaluator_id, state from assessments`;
+  const evaluators = await sql`select id, name, role from evaluators where active = true order by role desc, name asc`;
+  return Response.json({ applications, assessments, evaluators }, { headers: { "Cache-Control": "no-store" } });
+}

@@ -183,6 +183,7 @@ export default function ImportPage() {
                 📂 {file ? "Choose a different file" : "Choose CSV file…"}
                 <input type="file" accept=".csv,text/csv" onChange={handleFileChange} style={{ display: "none" }} />
               </label>
+              {!file ? <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent)" }}>👈 press here</span> : null}
               {file ? <span style={{ fontSize: 14 }}>✓ <strong>{file.name}</strong> <span style={{ color: "var(--text-faint)" }}>({headers.filter((h) => h.trim() !== "").length} columns)</span></span> : <span style={{ fontSize: 14, color: "var(--text-faint)" }}>No file chosen yet</span>}
             </div>
           </div>
@@ -194,10 +195,11 @@ export default function ImportPage() {
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: 16 }}>Check the file</div>
             <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Shows what would be imported. Nothing is saved.</div>
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12 }}>
               <button onClick={doDryRun} disabled={!file || loading !== null} style={bigBtn(!!file && loading === null, !!file && !report)}>
                 {loading === "dry" ? "Checking…" : "🔍 Check file"}
               </button>
+              {!!file && !report ? <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent)" }}>👈 press here</span> : null}
             </div>
           </div>
         </section>
@@ -217,7 +219,7 @@ export default function ImportPage() {
               {report.malformed.length ? line("Errors", report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`)) : null}
               {report.refCodes && report.refCodes.length ? line("Reference codes", report.refCodes) : null}
             </div>
-            {committed ? <a href="/" style={{ ...bigBtn(true, true), marginTop: 16, textDecoration: "none" }}>Go to dashboard →</a> : null}
+            {committed ? <a href="/admin/assignments" style={{ ...bigBtn(true, true), marginTop: 16, textDecoration: "none" }}>Next: assign to assessors →</a> : null}
           </section>
         ) : null}
 
@@ -227,10 +229,11 @@ export default function ImportPage() {
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: 16 }}>Import</div>
             <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Saves the applications. Applicants already imported (same email) are skipped, so it is safe to import the same sheet again later.</div>
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12 }}>
               <button onClick={doCommit} disabled={!report || committed || loading !== null} style={bigBtn(!!report && !committed && loading === null, true)} title={!report ? "Check the file first (step 3)" : undefined}>
                 {loading === "commit" ? "Importing…" : committed ? "✓ Imported" : "⬆ Import applications"}
               </button>
+              {!!report && !committed ? <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent)" }}>👈 press here</span> : null}
             </div>
           </div>
         </section>
