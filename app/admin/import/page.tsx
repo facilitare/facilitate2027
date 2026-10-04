@@ -214,7 +214,7 @@ export default function ImportPage() {
               {stat("Rows with errors", report.malformed.length, true)}
             </div>
             <div style={{ display: "grid", gap: 6, marginTop: 14 }}>
-              {line("Possible identity leaks to review", report.anonymityFlags.map((a) => `row ${a.row} ${a.field}: ${a.reason}`))}
+              {line("Optional — answers that mention a name or website (assessors will see them as written)", report.anonymityFlags.map((a) => `row ${a.row} ${a.field}: ${a.reason}`))}
               {line("Answers under “Other”", report.unmapped.map((u) => `row ${u.row}: ${u.value}`))}
               {report.malformed.length ? line("Errors", report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`)) : null}
               {report.refCodes && report.refCodes.length ? line("Reference codes", report.refCodes) : null}

@@ -19,7 +19,7 @@ export type AutoAssignResult = {
 
 /**
  * Deterministic greedy assignment — no randomness.
- * Flagged applications (anonymity_flag = true) are never auto-assigned.
+ * Anonymity flags do not block assignment (informational only).
  * They are reported as skipped with a human-readable reason.
  */
 export async function autoAssign(input: AutoAssignInput): Promise<AutoAssignResult> {
@@ -47,18 +47,8 @@ export async function autoAssign(input: AutoAssignInput): Promise<AutoAssignResu
   const skipped: AutoAssignResult["skipped"] = [];
   const eligible: typeof apps = [];
 
-  for (const a of apps) {
-    if (a.anonymity_flag === true) {
-      const notes = a.anonymity_notes ? ` — ${a.anonymity_notes}` : "";
-      skipped.push({
-        id: a.id,
-        ref_code: a.ref_code,
-        reason: `anonymity_flag set${notes} — redact or dismiss flag before assignment`,
-      });
-    } else {
-      eligible.push(a);
-    }
-  }
+  // Anonymity flags are informational only (Oct 2026) — every imported application is eligible.
+  eligible.push(...apps);
 
   // Active evaluators
   const evalRows = await sql`select id, name from evaluators where active = true order by name`;

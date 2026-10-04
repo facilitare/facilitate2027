@@ -50,7 +50,7 @@ export default function AssignmentsPage() {
     setBusy(true); setMsg(null);
     let n = 0;
     try {
-      for (const app of apps.filter((x) => !x.anonymity_flag)) {
+      for (const app of apps) {
         for (const ev of evs.filter((e) => e.role === "assessor")) {
           if (!find(app.id, ev.id) && (await assign(app.id, ev.id))) n++;
         }
@@ -61,7 +61,6 @@ export default function AssignmentsPage() {
   }
 
   const btn: React.CSSProperties = { padding: "12px 20px", borderRadius: 10, fontSize: 15, fontWeight: 600, background: "var(--accent)", color: "var(--accent-text)", border: "none", cursor: busy ? "wait" : "pointer", opacity: busy ? 0.6 : 1 };
-  const flagged = apps.filter((a) => a.anonymity_flag);
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px 16px 120px" }}>
@@ -70,15 +69,6 @@ export default function AssignmentsPage() {
         <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>Assignments</h1>
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 14 }}>Tick a box to give an application to an assessor; untick to take it back (not possible once they have submitted). Assessors see their applications on their dashboard straight away.</p>
         {error ? <div style={{ padding: 14, borderRadius: 10, background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div> : null}
-
-        {flagged.length ? (
-          <div style={{ padding: 14, borderRadius: 10, background: "var(--warn-soft)", border: "1px solid var(--warn)", fontSize: 14 }}>
-            <strong>{flagged.length} application(s) may reveal who the applicant is</strong> and cannot be assigned until checked. Open each one, hide the identifying details or dismiss the flag:
-            <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-              {flagged.map((a) => <li key={a.id}><a href={`/applications/${a.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>{a.ref_code}</a> — {a.anonymity_notes}</li>)}
-            </ul>
-          </div>
-        ) : null}
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <button onClick={assignEveryone} disabled={busy || !apps.length} style={btn}>Give all applications to all assessors</button>
@@ -99,12 +89,12 @@ export default function AssignmentsPage() {
               {apps.map((app) => (
                 <tr key={app.id} style={{ borderTop: "1px solid var(--border)" }}>
                   <td style={{ padding: 10 }}>
-                    <div style={{ fontWeight: 600 }}>{app.ref_code}{app.anonymity_flag ? " ⚠" : ""}</div>
+                    <div style={{ fontWeight: 600 }}>{app.ref_code}</div>
                     <div style={{ color: "var(--text-muted)", maxWidth: 320 }}>{app.session_title ?? "—"}</div>
                   </td>
                   {evs.map((ev) => {
                     const a = find(app.id, ev.id);
-                    const locked = a?.state === "submitted" || a?.state === "recused" || (!a && app.anonymity_flag);
+                    const locked = a?.state === "submitted" || a?.state === "recused";
                     return (
                       <td key={ev.id} style={{ padding: 10, textAlign: "center" }}>
                         <label style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: locked || busy ? "not-allowed" : "pointer" }}>

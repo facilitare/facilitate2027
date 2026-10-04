@@ -48,9 +48,7 @@ export async function POST(req: Request) {
   const targetEval = (await sql`select id, name from evaluators where id = ${evaluatorId} and active = true limit 1`) as any[];
   if (targetEval.length === 0) return Response.json({ error: "Evaluator not found or inactive", code: "not_found" }, { status: 404 });
 
-  if (appRows[0].anonymity_flag === true) {
-    return Response.json({ error: "Application has anonymity flag — redact or dismiss before assignment", code: "conflict" }, { status: 409 });
-  }
+  // Anonymity flags are informational only (decided Oct 2026): they never block assignment.
 
   // Check not already assigned and not recused
   const existing = (await sql`select id, state from assessments where application_id = ${applicationId} and evaluator_id = ${evaluatorId} limit 1`) as any[];

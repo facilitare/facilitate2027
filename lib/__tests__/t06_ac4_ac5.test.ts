@@ -1,13 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 
-describe("T06 AC4 — flagged cannot auto-assign", () => {
-  it("lib/assignment.ts filters anonymity_flag and reports skipped", () => {
+// Oct 2026: anonymity flags are informational only and no longer block assignment.
+describe("T06 AC4 — flagged applications can still be assigned", () => {
+  it("lib/assignment.ts does not skip flagged applications", () => {
     const src = readFileSync("lib/assignment.ts", "utf-8");
-    expect(src).toMatch(/anonymity_flag/);
-    expect(src).toMatch(/skipped/);
-    expect(src).toMatch(/anonymity_flag set/);
-    expect(src).toMatch(/redact or dismiss/i);
+    expect(src).not.toMatch(/anonymity_flag set/);
+    expect(src).not.toMatch(/redact or dismiss/i);
     // Must query only imported status
     expect(src).toMatch(/status = 'imported'/);
   });
