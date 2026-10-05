@@ -1,5 +1,6 @@
 import { verifySession } from "@/lib/auth";
 import { getSql } from "@/lib/db/client";
+import { makeMasker } from "@/lib/identity-mask";
 
 function getTokenFromRequest(req: Request): string | null {
   const cookie = req.headers.get("cookie");
@@ -58,7 +59,8 @@ export async function GET(req: Request) {
       a.focus_no_evidence, a.content_no_evidence, a.interactivity_no_evidence, a.credibility_no_evidence,
       app.ref_code, app.q11_theme,
       app.q7_about_session, app.q7b_benefits,
-      app.redacted_q7, app.redacted_q7b
+      app.redacted_q7, app.redacted_q7b,
+      app.q20_full_name, app.q23_cofacilitators, app.q1_email
     from assessments a
     join applications app on app.id = a.application_id
     where a.evaluator_id = ${evaluator.id}
@@ -67,7 +69,7 @@ export async function GET(req: Request) {
 
   const queue = (rows as any[]).map((r) => {
     const rawDesc: string = (r.redacted_q7 ?? r.q7_about_session ?? r.q7b_benefits ?? "") as string;
-    const excerpt = rawDesc.slice(0, 120);
+    const excerpt = (makeMasker(r)(rawDesc) ?? "").slice(0, 120);
     const hasAnyScore =
       r.focus_score !== null ||
       r.content_score !== null ||

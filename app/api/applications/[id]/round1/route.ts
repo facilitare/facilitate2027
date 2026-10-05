@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { verifySession, getClientIp } from "@/lib/auth";
 import { getSql } from "@/lib/db/client";
+import { makeMasker } from "@/lib/identity-mask";
 import { writeAudit } from "@/lib/audit";
 
 // Explicit allow-list — every column is spelled out in the SQL. Do not use star-select.
@@ -105,6 +106,7 @@ export async function GET(
       session_title, theme_reason, q10_delivery_other, cofacil_reason,
       large_group_experience, inclusive_design,
       redacted_q7, redacted_q7b, redacted_q16, redacted_q19,
+      q20_full_name, q23_cofacilitators, q1_email,
       anonymity_flag, anonymity_notes
     from applications
     where id = ${id}
@@ -128,6 +130,12 @@ export async function GET(
   if (row.redacted_q7b != null) result.q7b_benefits = row.redacted_q7b;
   if (row.redacted_q16 != null) result.q16_pathway = row.redacted_q16;
   if (row.redacted_q19 != null) result.q19_large_groups_english = row.redacted_q19;
+
+  // Hide names / websites from assessors automatically (originals stay for leads).
+  const mask = makeMasker(row);
+  for (const k of ["q6_audience_detail", "q7_about_session", "q7b_benefits", "q9_room_layout", "q12_timekeeping", "q15_first_ten_minutes", "q16_pathway", "q19_large_groups_english", "q18_iaf_qualification", "session_title", "theme_reason", "q10_delivery_other", "cofacil_reason", "large_group_experience", "inclusive_design", "q4_session_provides_other", "q5_audience_other", "q8_group_setup_other", "q14_methods_other"]) {
+    if (typeof result[k] === "string") result[k] = mask(result[k] as string);
+  }
 
   // Explicitly hide internal fields: iaf_standing is not returned, nor are identity fields.
   // Ensure we do not leak redacted_* keys or anonymity internal.
