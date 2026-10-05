@@ -15,6 +15,7 @@ type Report = {
   unmappedHeaders: string[];
   refCodes?: string[];
   importedCount?: number;
+  assignment?: { perApplication: number; applications: number; assigned: number; shortfall: number; warning?: string } | { error: string } | null;
 };
 
 export default function ImportPage() {
@@ -219,6 +220,13 @@ export default function ImportPage() {
               {report.malformed.length ? line("Errors", report.malformed.map((m) => `row ${m.row} ${m.field}="${m.value}" (${m.reason})`)) : null}
               {report.refCodes && report.refCodes.length ? line("Reference codes", report.refCodes) : null}
             </div>
+            {committed && report.assignment ? (
+              "error" in report.assignment
+                ? <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--danger)" }}>⚠ Automatic assignment failed ({report.assignment.error}) — use the Assignments page.</div>
+                : report.assignment.shortfall > 0
+                  ? <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--danger)" }}>⚠ Assigned {report.assignment.assigned} assessment(s), but {report.assignment.shortfall} short of {report.assignment.perApplication} per application (not enough active assessors). Check the Assignments page.</div>
+                  : <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Assigned {report.assignment.perApplication} assessors to each of {report.assignment.applications} applications.</div>
+            ) : null}
             {committed ? <a href="/admin/assignments" style={{ ...bigBtn(true, true), marginTop: 16, textDecoration: "none" }}>Next: assign to assessors →</a> : null}
           </section>
         ) : null}

@@ -90,7 +90,7 @@ export async function GET(req: Request) {
   if (me[0]?.role !== "lead") return Response.json({ error: "Only leads can manage assignments", code: "forbidden" }, { status: 403 });
 
   const applications = await sql`
-    select id, ref_code, session_title, status, anonymity_flag, anonymity_notes
+    select id, wave_id, ref_code, session_title, status, anonymity_flag, anonymity_notes
     from applications order by ref_code asc
   `;
   const assessments = await sql`select id, application_id, evaluator_id, state from assessments`;

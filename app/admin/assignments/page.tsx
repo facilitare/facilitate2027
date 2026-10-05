@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type App = { id: string; ref_code: string; session_title: string | null; status: string; anonymity_flag: boolean; anonymity_notes: string | null };
+type App = { id: string; wave_id?: string; ref_code: string; session_title: string | null; status: string; anonymity_flag: boolean; anonymity_notes: string | null };
 type Asmt = { id: string; application_id: string; evaluator_id: string; state: string };
 type Ev = { id: string; name: string; role: string };
 
@@ -60,6 +60,23 @@ export default function AssignmentsPage() {
     } catch (e: any) { setMsg(e.message); } finally { setBusy(false); }
   }
 
+  async function autoAssignAll() {
+    const waveIds = [...new Set(apps.map((a) => a.wave_id).filter(Boolean))] as string[];
+    if (!waveIds.length) return;
+    setBusy(true); setMsg(null);
+    try {
+      let assigned = 0, shortfall = 0;
+      for (const waveId of waveIds) {
+        const res = await fetch("/api/assignments/auto", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ waveId }) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error ?? "Auto-assign failed");
+        assigned += j.assigned; shortfall += j.shortfall;
+      }
+      setMsg(shortfall > 0 ? `⚠ ${assigned} assignment(s) created, ${shortfall} short (not enough active assessors).` : `${assigned} assignment(s) created automatically.`);
+      await load();
+    } catch (e: any) { setMsg(e.message); } finally { setBusy(false); }
+  }
+
   const btn: React.CSSProperties = { padding: "12px 20px", borderRadius: 10, fontSize: 15, fontWeight: 600, background: "var(--accent)", color: "var(--accent-text)", border: "none", cursor: busy ? "wait" : "pointer", opacity: busy ? 0.6 : 1 };
 
   return (
@@ -71,6 +88,7 @@ export default function AssignmentsPage() {
         {error ? <div style={{ padding: 14, borderRadius: 10, background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div> : null}
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <button onClick={autoAssignAll} disabled={busy || !apps.length} style={btn}>Auto-assign (balanced)</button>
           <button onClick={assignEveryone} disabled={busy || !apps.length} style={btn}>Give all applications to all assessors</button>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>👈 quickest for the practice round</span>
           {msg ? <span style={{ fontSize: 13, fontWeight: 600 }}>{msg}</span> : null}

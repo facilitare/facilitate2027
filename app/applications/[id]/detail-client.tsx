@@ -2,6 +2,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { computeAggregates, formatMeanForDisplay, type ScoringAssessment } from "@/lib/scoring";
 import { buildAggregatedFeedback, CRITERION_LABELS } from "@/lib/feedback";
+import { buildApplicantEmail, emailKindFor, type EmailKind } from "@/lib/applicant-email";
 import { ThemeBadge } from "@/components/ui/theme-badge";
 import { Chip } from "@/components/ui/chip";
 
@@ -155,7 +156,6 @@ export default function DetailClient({
   const feedback = useMemo(() => {
     const inputs = submitted.map((a) => ({
       evaluatorId: a.evaluator_id,
-      evaluatorName: a.evaluator_name,
       feedback_liked: a.feedback_liked,
       feedback_improve: a.feedback_improve,
       focus_no_evidence: a.focus_no_evidence,
@@ -178,6 +178,43 @@ export default function DetailClient({
       setTimeout(() => setCopyState("idle"), 1500);
     }
   }, [feedback.text]);
+
+  // personalised applicant email (template, editable; nothing is sent from the app)
+  const latestDecision = decisions[0]?.decision ?? null;
+  const [emailKind, setEmailKind] = useState<EmailKind>(() => emailKindFor(latestDecision, aggregates.qualityStatus));
+  const generatedEmail = useMemo(() => {
+    const noEvidenceCriteria: string[] = [];
+    for (const a of submitted) {
+      if (a.focus_no_evidence) noEvidenceCriteria.push(CRITERION_LABELS.focus);
+      if (a.content_no_evidence) noEvidenceCriteria.push(CRITERION_LABELS.content);
+      if (a.interactivity_no_evidence) noEvidenceCriteria.push(CRITERION_LABELS.interactivity);
+      if (a.credibility_no_evidence) noEvidenceCriteria.push(CRITERION_LABELS.credibility);
+    }
+    return buildApplicantEmail({ kind: emailKind, fullName: app.q20_full_name, sessionTitle: app.session_title, feedback, noEvidenceCriteria });
+  }, [emailKind, submitted, feedback, app.q20_full_name, app.session_title]);
+  const [emailSubject, setEmailSubject] = useState(generatedEmail.subject);
+  const [emailBody, setEmailBody] = useState(generatedEmail.body);
+  const regenerateEmail = useCallback((k: EmailKind) => {
+    setEmailKind(k);
+    setEmailSubject("");
+    setEmailBody("");
+  }, []);
+  // after a kind change (or "Reset"), refill the fields from the freshly generated draft
+  if (emailSubject === "" && emailBody === "") {
+    setEmailSubject(generatedEmail.subject);
+    setEmailBody(generatedEmail.body);
+  }
+  const [emailCopyState, setEmailCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const copyEmail = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(`Subject: ${emailSubject}\n\n${emailBody}`);
+      setEmailCopyState("copied");
+    } catch {
+      setEmailCopyState("error");
+    }
+    setTimeout(() => setEmailCopyState("idle"), 1500);
+  }, [emailSubject, emailBody]);
+  const mailtoHref = `mailto:${encodeURIComponent(app.q1_email ?? "")}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
 
   // decision form
   const [decision, setDecision] = useState<string>("accept");
@@ -420,6 +457,27 @@ export default function DetailClient({
             <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--text-faint)", marginBottom: 6 }}>Copy preview — exact clipboard text</div>
             <pre style={{ background: "var(--surface-sunk)", border: "1px solid var(--border)", borderRadius: 10, padding: 12, fontSize: 12, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 320, overflow: "auto" }}>{feedback.text}</pre>
           </div>
+        </div>
+      </section>
+
+      {/* Personalised applicant email — template draft, editable; opens in the admin's own email app */}
+      <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
+        <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", margin: 0 }}>Email to applicant — draft</h2>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Pre-filled with the applicant's name, session title and the panel feedback above (no assessor names, no private notes). Edit freely, then open it in your email app or copy it. Nothing is sent from this app.</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+          {([["accept", "Accepted"], ["decline", "Declined"], ["below_standard", "Below the bar"], ["update", "Feedback only"]] as const).map(([k, label]) => (
+            <button key={k} onClick={() => regenerateEmail(k)} style={{ border: emailKind === k ? "2px solid var(--accent)" : "1px solid var(--border)", borderRadius: 999, padding: "6px 12px", background: emailKind === k ? "var(--accent-soft)" : "var(--surface-sunk)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ marginTop: 12, fontSize: 13 }}><strong>To</strong> <span style={{ marginLeft: 6 }}>{app.q1_email ?? "— (no email on file)"}</span></div>
+        <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} style={{ width: "100%", marginTop: 8, border: "1px solid var(--border)", borderRadius: 10, padding: 10, fontSize: 13, fontFamily: "inherit", background: "var(--surface-sunk)", color: "var(--text)" }} />
+        <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={16} style={{ width: "100%", marginTop: 8, border: "1px solid var(--border)", borderRadius: 10, padding: 10, fontSize: 13, lineHeight: 1.5, fontFamily: "inherit", background: "var(--surface-sunk)", color: "var(--text)" }} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+          <a href={mailtoHref} style={{ background: "var(--accent)", color: "var(--accent-text)", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>Open in email app</a>
+          <button onClick={copyEmail} style={{ background: "var(--surface-sunk)", color: "var(--text)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            {emailCopyState === "copied" ? "Copied ✓" : emailCopyState === "error" ? "Copy failed" : "Copy email"}
+          </button>
+          <button onClick={() => regenerateEmail(emailKind)} style={{ background: "transparent", color: "var(--text-muted)", border: "none", padding: "8px 6px", fontSize: 13, cursor: "pointer" }}>Reset draft</button>
         </div>
       </section>
 

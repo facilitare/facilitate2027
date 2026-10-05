@@ -2,6 +2,7 @@ import { z } from "zod";
 import { verifySession, getClientIp } from "@/lib/auth";
 import { getSql } from "@/lib/db/client";
 import { processImport } from "@/lib/import/process";
+import { autoAssign } from "@/lib/assignment";
 
 function getSessionFromRequest(req: Request): string | null {
   const cookie = req.headers.get("cookie");
@@ -83,5 +84,18 @@ export async function POST(req: Request) {
     ip,
   });
 
-  return Response.json(report);
+  let assignment: { perApplication: number; applications: number; assigned: number; shortfall: number; warning?: string } | { error: string } | null = null;
+  const imported = report.importedCount ?? 0;
+  if (imported > 0) {
+    try {
+      const r = await autoAssign({ waveId: waveId!, actorId: evaluator.id, actorName: evaluator.name, ip });
+      const pa = await sql`select value from settings where key = 'assessors_per_application'`;
+      const v = Number((pa as any[])[0]?.value ?? 3);
+      assignment = { perApplication: isNaN(v) ? 3 : v, applications: imported, assigned: r.assigned, shortfall: r.shortfall, warning: r.warning };
+    } catch (e: any) {
+      assignment = { error: e?.message ?? "Auto-assign failed" };
+    }
+  }
+
+  return Response.json({ ...report, assignment });
 }
