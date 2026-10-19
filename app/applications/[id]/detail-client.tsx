@@ -128,6 +128,63 @@ function qualityBadge(status: string) {
   return <span style={{ background: "var(--surface-sunk)", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Insufficient data</span>;
 }
 
+function IafCorrection({ app }: { app: Application }) {
+  const [open, setOpen] = useState(false);
+  const [member, setMember] = useState(app.q17_iaf_member ?? "no");
+  const [qual, setQual] = useState(app.q18_iaf_qualification ?? "");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const valid = reason.trim().length >= 10 && !busy;
+
+  const save = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/applications/${app.id}/iaf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q17_iaf_member: member, q18_iaf_qualification: qual.trim() || null, reason: reason.trim() }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(json.error ?? `Failed (${res.status})`); return; }
+      window.location.reload();
+    } catch (e: any) {
+      setErr(e?.message ?? "Network error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return <button type="button" onClick={() => setOpen(true)} style={{ marginTop: 4, justifySelf: "start", background: "none", border: "none", padding: 0, color: "var(--accent)", cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>Correct IAF answers</button>;
+  }
+  const field = { padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13, background: "var(--surface)", color: "var(--text)" } as const;
+  return (
+    <div style={{ display: "grid", gap: 8, padding: 12, border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-sunk)" }}>
+      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Use when the applicant&apos;s answer was wrong (e.g. the form forced an accreditation choice). IAF standing is recalculated and the change is logged.</div>
+      <label style={{ fontSize: 12, fontWeight: 600 }}>IAF member
+        <select value={member} onChange={(e) => setMember(e.target.value)} style={{ ...field, display: "block", marginTop: 2 }}>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="not_sure">Not sure</option>
+        </select>
+      </label>
+      <label style={{ fontSize: 12, fontWeight: 600 }}>Accreditation (as on the form; leave empty for none)
+        <input value={qual} onChange={(e) => setQual(e.target.value)} placeholder="e.g. Non-IAF accreditation" style={{ ...field, display: "block", marginTop: 2, width: "100%", boxSizing: "border-box" }} />
+      </label>
+      <label style={{ fontSize: 12, fontWeight: 600 }}>Reason (required, ≥10 characters)
+        <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Confirmed with applicant / IAF register" style={{ ...field, display: "block", marginTop: 2, width: "100%", boxSizing: "border-box" }} />
+      </label>
+      {err ? <div style={{ fontSize: 12, color: "var(--score-0)" }}>{err}</div> : null}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" disabled={!valid} onClick={save} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: "var(--accent)", color: "#fff", fontSize: 13, cursor: valid ? "pointer" : "not-allowed", opacity: valid ? 1 : 0.5 }}>{busy ? "Saving…" : "Save correction"}</button>
+        <button type="button" onClick={() => setOpen(false)} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 export default function DetailClient({
   app,
   assessments,
@@ -309,6 +366,7 @@ export default function DetailClient({
           <div><strong>Availability</strong> {chips(app.q3_availability)} <span style={{ marginLeft: 12 }}><strong>Ticket</strong></span> {chips(app.q2_ticket_status)}</div>
           {app.q22_headshot_url ? <div><strong>Headshot</strong> <a href={app.q22_headshot_url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>{app.q22_headshot_url}</a></div> : null}
           <div><strong>IAF standing</strong> <span style={{ marginLeft: 6 }}>{app.iaf_standing == null ? "—" : app.iaf_standing === 2 ? "2 — IAF member with accreditation" : app.iaf_standing === 1 ? "1 — IAF member" : "0 — Not a member"} </span> <span style={{ color: "var(--text-faint)", fontSize: 12 }}>(q17={app.q17_iaf_member ?? "—"}, q18={app.q18_iaf_qualification ?? "—"})</span></div>
+          <IafCorrection app={app} />
         </div>
       </section>
 

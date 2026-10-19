@@ -3,6 +3,7 @@ import { mapHeaders } from "./mapping";
 import { normalizeRow } from "./normalize";
 import { scanAnonymity } from "./anonymity";
 import { getSql } from "@/lib/db/client";
+import { deriveIafStandingFromForm } from "@/lib/iaf-standing";
 
 export interface ImportReport {
   rowsRead: number;
@@ -214,24 +215,7 @@ export async function processImport(opts: ProcessOptions): Promise<ImportReport>
       const anonNotes = anonFlag ? entry.anonymityHits.map((h) => `${h.field}: ${h.reason}`).join("; ") : null;
 
       // Derive iaf_standing
-      let iafStanding: number | null = null;
-      if (n.q17_iaf_member === "yes") {
-        const acc = n.q18_iaf_qualification || "";
-        const low = acc.toLowerCase();
-        if (low.includes("certified") || low.includes("cpf") || low.includes("endorsed") || low.includes("master")) {
-          iafStanding = 2;
-        } else if (low.includes("other") || low.trim() !== "") {
-          // conservative: if any qualification mentioned, 1? But spec says endorsed etc =>2 else 1
-          // If q18 is "none of these but have other qualifications" -> 1?
-          // We'll detect
-          if (low.includes("none")) iafStanding = 1;
-          else iafStanding = 1;
-        } else {
-          iafStanding = 1;
-        }
-      } else if (n.q17_iaf_member) {
-        iafStanding = 0;
-      }
+      const iafStanding = deriveIafStandingFromForm(n.q17_iaf_member, n.q18_iaf_qualification);
 
       // Upsert? No, insert new
       await sql`

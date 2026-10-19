@@ -517,7 +517,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
       </a>
 
       <div style={{ marginBottom: 20, fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
-        FACILITATE 2027 · 16–17 April 2027, Birmingham. Answers appear in the same order and numbering as the application form (sections 2–5; section 1 is logistics and section 6 is personal information, both hidden). Score each criterion after reading its section.
+        FACILITATE 2027 · 16–17 April 2027, Birmingham. Answers appear in the same order and numbering as the application form (sections 2–5; section 1 is logistics and section 6 is personal information, both hidden). Score each criterion after reading its section. Some form questions had tight character limits, so judge what is written against the anchors rather than its length.
       </div>
       {FORM_SECTIONS.map((sec, i) => {
         const sc = scoreFor(sec.criterion);
