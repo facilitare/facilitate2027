@@ -490,9 +490,6 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
             <div style={{ marginTop: 8, fontWeight: 600 }}>Total: {total} / {iafBonusMode === "additive" ? 10 : 8} <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 12 }}>({iafBonusMode === "additive" ? "0–10 additive · including IAF bonus" : "0–8 tiebreak · IAF not in total"})</span></div>
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap" }}>
-            <a href={`/review/${assessmentId}/compare`} style={{ background: "var(--accent)", color: "var(--accent-text)", padding: "10px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 500, fontSize: 14 }}>
-              See how the panel scored this
-            </a>
             <a href="/" style={{ border: "1px solid var(--border-strong)", padding: "10px 16px", borderRadius: 8, textDecoration: "none", color: "var(--text)", fontWeight: 500, fontSize: 14 }}>
               Next assessment →
             </a>

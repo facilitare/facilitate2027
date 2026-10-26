@@ -4,8 +4,14 @@ import { makeMasker } from "../identity-mask";
 describe("identity mask", () => {
   const m = makeMasker({ q20_full_name: "Alice Blackwell", q23_cofacilitators: "Lorenza Bacino", q1_email: "alice@aliceblackwell.com" });
   it("hides full name, first name, co-facilitator and website", () => {
-    expect(m("Join Alice Blackwell (Facilitator) with Lorenza. See aliceblackwell.com")).toBe("Join [name] (Facilitator) with [name]. See [website]");
+    expect(m("Join Alice Blackwell (Facilitator) with Lorenza. See aliceblackwell.com")).toBe("Join [name] (Facilitator) with another facilitator. See [website]");
     expect(m("Alice will then pull back the curtain")).toBe("[name] will then pull back the curtain");
+  });
+  it("turns co-facilitator names into 'another facilitator', collapsing full names and lists", () => {
+    const c = makeMasker({ q20_full_name: "Alice Blackwell", q23_cofacilitators: "Lorenza Bacino, Ion Popa" });
+    expect(c("I co-facilitate with Lorenza Bacino.")).toBe("I co-facilitate with another facilitator.");
+    expect(c("Lorenza and Ion will lead the debrief")).toBe("other facilitators will lead the debrief");
+    expect(c("Alice and Lorenza")).toBe("[name] and another facilitator");
   });
   it("leaves ordinary words and other text alone", () => {
     const g = makeMasker({ q20_full_name: "Grace Will", q23_cofacilitators: "I will approach someone if I get selected" });

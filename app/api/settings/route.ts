@@ -65,7 +65,7 @@ const SettingsShape = z.object({
 
 // Defaults matching 03-DATA-MODEL seed
 const DEFAULTS: Record<string, unknown> = {
-  assessors_per_application: 3,
+  assessors_per_application: 4,
   session_minutes: 50,
   youth_threshold: 35,
   ethnicity_options: "uk_census",

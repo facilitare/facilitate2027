@@ -90,8 +90,8 @@ export async function POST(req: Request) {
     try {
       const r = await autoAssign({ waveId: waveId!, actorId: evaluator.id, actorName: evaluator.name, ip });
       const pa = await sql`select value from settings where key = 'assessors_per_application'`;
-      const v = Number((pa as any[])[0]?.value ?? 3);
-      assignment = { perApplication: isNaN(v) ? 3 : v, applications: imported, assigned: r.assigned, shortfall: r.shortfall, warning: r.warning };
+      const v = Number((pa as any[])[0]?.value ?? 4);
+      assignment = { perApplication: isNaN(v) ? 4 : v, applications: imported, assigned: r.assigned, shortfall: r.shortfall, warning: r.warning };
     } catch (e: any) {
       assignment = { error: e?.message ?? "Auto-assign failed" };
     }
