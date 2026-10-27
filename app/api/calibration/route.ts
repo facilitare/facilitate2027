@@ -343,7 +343,7 @@ export async function POST(req: Request) {
       }
       // Assign each newly marked app to all active evaluators
       if (applicationIds.length > 0) {
-        const activeEvs = (await sql`select id from evaluators where active = true`) as any[];
+        const activeEvs = (await sql`select id from evaluators where active = true and takes_assessments`) as any[];
         for (const appId of applicationIds) {
           for (const ev of activeEvs as any[]) {
             await sql`insert into assessments (application_id, evaluator_id, state) values (${appId}, ${ev.id}, 'assigned') on conflict (application_id, evaluator_id) do nothing`;
@@ -392,7 +392,7 @@ export async function POST(req: Request) {
     await sql`update applications set is_calibration = true, updated_at = now() where id = any(${targetIds}::uuid[])`;
     await sql`update applications set status = 'scoring', updated_at = now() where id = any(${targetIds}::uuid[]) and status = 'imported'`;
     // Assign to ALL active evaluators regardless of assessors_per_application
-    const activeEvs = (await sql`select id from evaluators where active = true`) as any[];
+    const activeEvs = (await sql`select id from evaluators where active = true and takes_assessments`) as any[];
     let assigned = 0;
     for (const appId of targetIds) {
       for (const ev of activeEvs as any[]) {

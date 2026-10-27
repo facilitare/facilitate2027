@@ -86,7 +86,7 @@ export async function autoAssign(input: AutoAssignInput): Promise<AutoAssignResu
   eligible.push(...apps);
 
   // Active evaluators
-  const evalRows = await sql`select id, name from evaluators where active = true order by name`;
+  const evalRows = await sql`select id, name from evaluators where active = true and takes_assessments order by name`;
   const evaluators = evalRows as any[];
   if (evaluators.length === 0) {
     return { assigned: 0, skipped, shortfall: eligible.length * (perApp as number), loads: [] };
@@ -96,7 +96,7 @@ export async function autoAssign(input: AutoAssignInput): Promise<AutoAssignResu
   const loadRows = await sql`
     select evaluator_id, count(*)::int as c
     from assessments
-    where evaluator_id in (select id from evaluators where active = true)
+    where evaluator_id in (select id from evaluators where active = true and takes_assessments)
     group by evaluator_id
   `;
   const loadMap = new Map<string, number>();
