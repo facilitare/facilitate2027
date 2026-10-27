@@ -66,14 +66,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (appRows.length === 0) return Response.json({ error: "Application not found", code: "not_found" }, { status: 404 });
   const app = appRows[0] as { id: string; ref_code: string; wave_id: string; status: string; panel_discussion: string | null };
 
-  // Assessors never see colleagues' scores or feedback (decision 2026-10-26): reading others'
-  // results after submitting would pull the scores they give on their next applications toward
-  // the group. Only the panel lead sees the comparison.
+  // R2 — server check: an assessor sees colleagues' scores only after submitting their own
+  // (no anchoring before submit; archive and comparison open afterwards). Leads always see.
   if (!isLead) {
-    return Response.json(
-      { error: "The panel view is available to the panel lead only.", code: "forbidden", r2: true },
-      { status: 403 }
-    );
+    const own = (await sql`select state from assessments where application_id = ${id} and evaluator_id = ${evaluator.id} limit 1`) as any[];
+    const ownState = own.length ? (own[0] as any).state : null;
+    if (ownState !== "submitted") {
+      return Response.json(
+        { error: "Panel view requires your own submitted assessment. Submit your assessment first or contact a lead.", code: "forbidden", r2: true },
+        { status: 403 }
+      );
+    }
   }
 
   // Fetch submitted assessments with evaluator names
@@ -166,9 +169,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const appRows = await fetchApplication(sql, id);
   if (appRows.length === 0) return Response.json({ error: "Application not found", code: "not_found" }, { status: 404 });
 
-  // Same gate as GET: the panel thread is for the lead only.
+  // R2 gate identical to GET
   if (!isLead) {
-    return Response.json({ error: "The panel view is available to the panel lead only.", code: "forbidden" }, { status: 403 });
+    const own = (await sql`select state from assessments where application_id = ${id} and evaluator_id = ${evaluator.id} limit 1`) as any[];
+    const ownState = own.length ? (own[0] as any).state : null;
+    if (ownState !== "submitted") {
+      return Response.json(
+        { error: "Panel view requires your own submitted assessment.", code: "forbidden" },
+        { status: 403 }
+      );
+    }
   }
 
   let body: unknown;

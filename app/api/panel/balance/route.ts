@@ -107,7 +107,7 @@ export async function GET(req: Request) {
       select
         id, ref_code, status,
         q24_region, q27_under_35, q11_theme, q8_group_setup,
-        q10_delivery_mode, q26_career_stage, q25_ethnicity
+        q10_delivery_mode, q26_career_stage, q25_ethnicity, q28_gender
       from applications
       order by ref_code asc
     `) as any[];
@@ -127,6 +127,7 @@ export async function GET(req: Request) {
     q10_delivery_mode: a.q10_delivery_mode ?? null,
     q26_career_stage: a.q26_career_stage ?? null,
     q25_ethnicity: a.q25_ethnicity ?? null,
+    q28_gender: a.q28_gender ?? null,
   }));
 
   // Categorise columns: Selected = accepted + shortlisted, Reserve = standby, Not selected = rest
@@ -222,7 +223,7 @@ export async function POST(req: Request) {
       for (const r of rows) settingsMap.set(r.key, parseSettingValue(r.value));
     } catch {}
     const settings = toBalanceSettings(settingsMap);
-    const apps = (await sql`select id, ref_code, status, q24_region, q27_under_35, q11_theme, q8_group_setup, q10_delivery_mode, q26_career_stage, q25_ethnicity from applications order by ref_code asc`) as any[];
+    const apps = (await sql`select id, ref_code, status, q24_region, q27_under_35, q11_theme, q8_group_setup, q10_delivery_mode, q26_career_stage, q25_ethnicity, q28_gender from applications order by ref_code asc`) as any[];
     const balanceApps: BalanceApp[] = apps.map((a: any) => ({
       id: a.id,
       ref_code: a.ref_code,
@@ -234,6 +235,7 @@ export async function POST(req: Request) {
       q10_delivery_mode: a.q10_delivery_mode ?? null,
       q26_career_stage: a.q26_career_stage ?? null,
       q25_ethnicity: a.q25_ethnicity ?? null,
+    q28_gender: a.q28_gender ?? null,
     }));
     const selectedSet = balanceApps.filter((a) => a.status === "accepted" || a.status === "shortlisted");
     const bal = computeBalance(selectedSet, settings);
@@ -270,7 +272,7 @@ export async function POST(req: Request) {
     for (const r of rows) settingsMap2.set(r.key, parseSettingValue(r.value));
   } catch {}
   const settings2 = toBalanceSettings(settingsMap2);
-  const apps2 = (await sql`select id, ref_code, status, q24_region, q27_under_35, q11_theme, q8_group_setup, q10_delivery_mode, q26_career_stage, q25_ethnicity from applications order by ref_code asc`) as any[];
+  const apps2 = (await sql`select id, ref_code, status, q24_region, q27_under_35, q11_theme, q8_group_setup, q10_delivery_mode, q26_career_stage, q25_ethnicity, q28_gender from applications order by ref_code asc`) as any[];
   const balanceApps2: BalanceApp[] = apps2.map((a: any) => ({
     id: a.id,
     ref_code: a.ref_code,
@@ -282,6 +284,7 @@ export async function POST(req: Request) {
     q10_delivery_mode: a.q10_delivery_mode ?? null,
     q26_career_stage: a.q26_career_stage ?? null,
     q25_ethnicity: a.q25_ethnicity ?? null,
+    q28_gender: a.q28_gender ?? null,
   }));
   const selected2 = balanceApps2.filter((a) => a.status === "accepted" || a.status === "shortlisted");
   const balance2 = computeBalance(selected2, settings2);

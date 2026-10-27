@@ -15,6 +15,8 @@ type QueueItem = {
   assigned_at: string;
   updated_at: string;
   isDraft: boolean;
+  submitted_at: string | null;
+  ownTotal: number | null;
 };
 
 type QueueResponse = {
@@ -315,8 +317,8 @@ export default function DashboardClient() {
             </div>
           ) : (
             activeList.map((item) => (
+              <div key={item.assessmentId}>
               <a
-                key={item.assessmentId}
                 href={`/review/${item.assessmentId}`}
                 style={{
                   display: "block",
@@ -357,7 +359,9 @@ export default function DashboardClient() {
                     }}
                     title={new Date(item.assigned_at).toLocaleString()}
                   >
-                    Assigned {timeSince(item.assigned_at)}
+                    {item.state === "submitted" && item.submitted_at
+                      ? `Submitted ${timeSince(item.submitted_at)}`
+                      : `Assigned ${timeSince(item.assigned_at)}`}
                   </span>
                 </div>
                 <div
@@ -378,6 +382,20 @@ export default function DashboardClient() {
                   {item.excerpt.length === 120 ? "…" : ""}
                 </div>
               </a>
+              {item.state === "submitted" ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", margin: "6px 4px 0", fontSize: 13 }}>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    Your score: <strong style={{ color: "var(--text)" }}>{item.ownTotal ?? "—"} / 8</strong>
+                  </span>
+                  <a
+                    href={`/review/${item.applicationId}/compare`}
+                    style={{ marginLeft: "auto", fontWeight: 500, color: "var(--accent)", textDecoration: "none" }}
+                  >
+                    See how the panel scored this →
+                  </a>
+                </div>
+              ) : null}
+              </div>
             ))
           )}
         </div>

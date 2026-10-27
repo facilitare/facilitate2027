@@ -14,6 +14,7 @@ export type BalanceApp = {
   q10_delivery_mode: string | null;
   q26_career_stage: string | null;
   q25_ethnicity: string | null;
+  q28_gender: string | null;
 };
 
 export type BalanceSettings = {
@@ -107,6 +108,11 @@ export type CareerStageBalance = {
   byStage: Array<{ stage: string; count: number; pct: number }>;
 };
 
+export type GenderBalance = {
+  total: number;
+  byGender: Array<{ gender: string; count: number; pct: number }>;
+};
+
 export type EthnicityBalance =
   | { configured: false; message: string }
   | { configured: true; total: number; byEthnicity: Array<{ ethnicity: string; count: number; pct: number }> };
@@ -119,6 +125,7 @@ export type BalanceResult = {
   groupSize: GroupSizeBalance;
   delivery: DeliveryBalance;
   careerStage: CareerStageBalance;
+  gender: GenderBalance;
   ethnicity: EthnicityBalance;
 };
 
@@ -208,6 +215,17 @@ export function computeBalance(selected: BalanceApp[], settings: BalanceSettings
     .sort((a, b) => b.count - a.count || a.stage.localeCompare(b.stage));
   const careerStage: CareerStageBalance = { total, byStage };
 
+  // Gender
+  const genderMap = new Map<string, number>();
+  for (const a of selected) {
+    const g = a.q28_gender && a.q28_gender.trim() !== "" ? a.q28_gender.trim() : "Unknown";
+    genderMap.set(g, (genderMap.get(g) ?? 0) + 1);
+  }
+  const byGender: GenderBalance["byGender"] = Array.from(genderMap.entries())
+    .map(([gender, count]) => ({ gender, count, pct: total > 0 ? (count / total) * 100 : 0 }))
+    .sort((a, b) => b.count - a.count || a.gender.localeCompare(b.gender));
+  const gender: GenderBalance = { total, byGender };
+
   // Ethnicity
   let ethnicity: EthnicityBalance;
   const configured = settings.ethnicityOptions !== null && settings.ethnicityOptions !== undefined && String(settings.ethnicityOptions).trim() !== "" && String(settings.ethnicityOptions).toLowerCase() !== "null";
@@ -226,7 +244,7 @@ export function computeBalance(selected: BalanceApp[], settings: BalanceSettings
     ethnicity = { configured: true, total, byEthnicity };
   }
 
-  return { total, outside, youth, themes, groupSize, delivery, careerStage, ethnicity };
+  return { total, outside, youth, themes, groupSize, delivery, careerStage, gender, ethnicity };
 }
 
 // Helpers for client quick checks

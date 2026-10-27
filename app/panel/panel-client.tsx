@@ -639,6 +639,39 @@ export default function PanelClient() {
           }
         />
 
+        {/* Gender */}
+        <Card
+          title="Gender"
+          pass={undefined}
+          children={
+            <div>
+              {balance.gender.byGender.length === 0 ? (
+                <div style={{ fontSize: 12, color: "var(--text-faint)" }}>No data</div>
+              ) : (
+                <div style={{ display: "grid", gap: 6 }}>
+                  {balance.gender.byGender.map((g) => {
+                    const w = Math.max(0, Math.min(100, g.pct));
+                    return (
+                      <div key={g.gender} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 110, fontSize: 12, color: "var(--text-muted)", textAlign: "right" as const, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }} title={g.gender}>{g.gender}</div>
+                        <div style={{ flex: 1, height: 10, background: "var(--surface-sunk)", borderRadius: 999, overflow: "hidden", border: "1px solid var(--border)" }}>
+                          <div style={{ width: `${w}%`, height: "100%", background: "var(--accent)", borderRadius: 999, transition: "width 200ms" }} />
+                        </div>
+                        <div style={{ width: 72, fontSize: 12, fontVariantNumeric: "tabular-nums", textAlign: "right" as const }}>{g.count} · {pctFmt(g.pct)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <VisuallyHiddenTable
+                caption="Gender spread"
+                headers={["Gender", "Count", "Percent"]}
+                rows={balance.gender.byGender.map((g) => [g.gender, g.count, pct1(g.pct)])}
+              />
+            </div>
+          }
+        />
+
         {/* Ethnicity */}
         <Card
           title="Ethnic background"

@@ -53,7 +53,7 @@ export async function GET(req: Request) {
       a.application_id,
       a.state,
       a.assigned_at,
-      a.updated_at,
+      a.updated_at, a.submitted_at,
       a.focus_score, a.content_score, a.interactivity_score, a.credibility_score,
       a.feedback_liked, a.feedback_improve,
       a.focus_no_evidence, a.content_no_evidence, a.interactivity_no_evidence, a.credibility_no_evidence,
@@ -94,6 +94,11 @@ export async function GET(req: Request) {
       updated_at: r.updated_at as string,
       isDraft,
       hasAnyScore,
+      submitted_at: (r.submitted_at ?? null) as string | null,
+      ownTotal:
+        r.state === "submitted"
+          ? Number(r.focus_score ?? 0) + Number(r.content_score ?? 0) + Number(r.interactivity_score ?? 0) + Number(r.credibility_score ?? 0)
+          : null,
     };
   });
 
