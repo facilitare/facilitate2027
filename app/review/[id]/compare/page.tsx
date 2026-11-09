@@ -24,6 +24,12 @@ export default async function ComparePage({ params }: { params: Promise<{ id: st
   const sql = getSql();
   const rows = (await sql`select application_id from assessments where id = ${id} limit 1`) as any[];
   const applicationId = rows.length ? (rows[0].application_id as string) : id;
+  // /review/[id] expects the evaluator's own assessment id, so the "Back to assessment" links need it.
+  let backId = rows.length ? id : undefined;
+  if (!backId) {
+    const own = (await sql`select id from assessments where application_id = ${id} and evaluator_id = ${session.evaluatorId} limit 1`) as any[];
+    backId = own.length ? (own[0].id as string) : undefined;
+  }
 
-  return <CompareClient applicationId={applicationId} />;
+  return <CompareClient applicationId={applicationId} backId={backId} />;
 }

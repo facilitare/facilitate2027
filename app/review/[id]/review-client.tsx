@@ -493,6 +493,9 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
             <a href={`/review/${assessmentId}/compare`} style={{ background: "var(--accent)", color: "var(--accent-text)", padding: "10px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 500, fontSize: 14 }}>
               See how the panel scored this
             </a>
+            <button onClick={() => setShowSubmitted(false)} style={{ border: "1px solid var(--border-strong)", padding: "10px 16px", borderRadius: 8, background: "var(--surface)", color: "var(--text)", fontWeight: 500, fontSize: 14, cursor: "pointer" }}>
+              View proposal and my notes
+            </button>
             <a href="/" style={{ border: "1px solid var(--border-strong)", padding: "10px 16px", borderRadius: 8, textDecoration: "none", color: "var(--text)", fontWeight: 500, fontSize: 14 }}>
               Next assessment →
             </a>
@@ -566,6 +569,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <span style={{ fontSize: 13, fontWeight: 600 }}>What was strong about this session? <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional)</span></span>
           <textarea
             value={feedbackLiked}
+            readOnly={assessment?.state === "submitted"}
             onChange={(e) => {
               setFeedbackLiked(e.target.value);
               scheduleAutosave({ feedback_liked: e.target.value });
@@ -580,6 +584,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <span style={{ fontSize: 13, fontWeight: 600 }}>What could be improved? <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional)</span></span>
           <textarea
             value={feedbackImprove}
+            readOnly={assessment?.state === "submitted"}
             onChange={(e) => {
               setFeedbackImprove(e.target.value);
               scheduleAutosave({ feedback_improve: e.target.value });
@@ -594,6 +599,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           <span style={{ fontSize: 13, fontWeight: 600 }}>Private note <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional, not shared with applicant)</span></span>
           <textarea
             value={privateNote}
+            readOnly={assessment?.state === "submitted"}
             onChange={(e) => {
               setPrivateNote(e.target.value);
               scheduleAutosave({ private_note: e.target.value });
@@ -630,6 +636,13 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
           </button>
         </div>
       </header>
+
+      {isSubmitted ? (
+        <div style={{ background: "var(--surface-sunk)", borderBottom: "1px solid var(--border)", padding: "10px 24px", fontSize: 13, color: "var(--text-muted)", display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <span>Submitted: read only. Your scores are final.</span>
+          <a href={`/review/${assessmentId}/compare`} style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>See how the panel scored this →</a>
+        </div>
+      ) : null}
 
       {isRecused ? (
         <main style={{ maxWidth: 720, margin: "40px auto", padding: "0 24px" }}>
@@ -707,7 +720,7 @@ export default function ReviewClient({ assessmentId }: { assessmentId: string })
               </label>
               <label style={{ display: "grid", gap: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>Private note <span style={{ fontWeight: 400, color: "var(--text-faint)" }}>(optional)</span></span>
-                <textarea value={privateNote} onChange={(e) => { setPrivateNote(e.target.value); scheduleAutosave({ private_note: e.target.value }); }} rows={2} placeholder="For panel only" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "var(--font-sans)", background: "var(--surface)", color: "var(--text)" }} />
+                <textarea value={privateNote} readOnly={isSubmitted} onChange={(e) => { if (isSubmitted) return; setPrivateNote(e.target.value); scheduleAutosave({ private_note: e.target.value }); }} rows={2} placeholder="For panel only" style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "var(--font-sans)", background: "var(--surface)", color: "var(--text)" }} />
               </label>
             </div>
           </div>

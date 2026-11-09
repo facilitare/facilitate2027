@@ -73,7 +73,8 @@ function getNoEvidence(a: PanelAssessment, k: CKey): boolean {
   return a.credibility_no_evidence;
 }
 
-export default function CompareClient({ applicationId }: { applicationId: string }) {
+export default function CompareClient({ applicationId, backId }: { applicationId: string; backId?: string }) {
+  const reviewHref = `/review/${backId ?? applicationId}`;
   const [data, setData] = useState<PanelResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ status: number; message: string; code?: string } | null>(null);
@@ -170,7 +171,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
   if (error && error.status === 403) {
     return (
       <main style={{ maxWidth: 720, margin: "48px auto", padding: "0 24px" }}>
-        <a href={`/review/${applicationId}`} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
+        <a href={reviewHref} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
           ← Back to assessment
         </a>
         <div
@@ -208,7 +209,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
           </p>
           <div style={{ marginTop: 20, display: "flex", gap: 12, justifyContent: "center" }}>
             <a
-              href={`/review/${applicationId}`}
+              href={reviewHref}
               style={{
                 background: "var(--accent)",
                 color: "var(--accent-text)",
@@ -245,7 +246,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
   if (error) {
     return (
       <main style={{ maxWidth: 720, margin: "48px auto", padding: "0 24px" }}>
-        <a href={`/review/${applicationId}`} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
+        <a href={reviewHref} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
           ← Back to assessment
         </a>
         <div
@@ -285,7 +286,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
 
   return (
     <main style={{ maxWidth: 1100, margin: "32px auto", padding: "0 24px" }}>
-      <a href={`/review/${applicationId}`} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
+      <a href={reviewHref} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
         ← Back to assessment
       </a>
       <div style={{ marginTop: 12, display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
@@ -692,7 +693,7 @@ export default function CompareClient({ applicationId }: { applicationId: string
       </section>
 
       <div style={{ marginTop: 32, textAlign: "center" }}>
-        <a href={`/review/${applicationId}`} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
+        <a href={reviewHref} style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>
           ← Back to assessment
         </a>{" "}
         <span style={{ color: "var(--text-faint)", fontSize: 12 }}>·</span>{" "}
