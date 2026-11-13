@@ -22,6 +22,7 @@ type Row = {
   normalised_total: number | null;
   divergence: number | null;
   needsCalibration: boolean;
+  calibrationReviewed?: boolean;
   qualityStatus: string;
   range_focus: number | null;
   range_content: number | null;
@@ -66,6 +67,13 @@ function qualityLabel(s: string): { label: string; color: string; bg: string } {
 }
 
 function divergenceFlag(row: Row) {
+  if (row.needsCalibration && row.calibrationReviewed) {
+    return (
+      <span title="A lead marked this as manually reviewed (see application detail)" style={{ fontSize: 11, fontWeight: 600, color: "var(--score-2)" }}>
+        ✓ Calibration reviewed
+      </span>
+    );
+  }
   if (row.needsCalibration) {
     return (
       <span
@@ -145,7 +153,7 @@ export default function ApplicationsClient() {
     if (waveFilter !== "all") rows = rows.filter((r) => r.wave_id === waveFilter);
     if (themeFilter !== "all") rows = rows.filter((r) => (r.theme ?? "").toLowerCase() === themeFilter.toLowerCase());
     if (statusFilter !== "all") rows = rows.filter((r) => (r.status ?? "").toLowerCase() === statusFilter.toLowerCase());
-    if (needsCalOnly) rows = rows.filter((r) => r.needsCalibration);
+    if (needsCalOnly) rows = rows.filter((r) => r.needsCalibration && !r.calibrationReviewed);
     if (belowOnly) rows = rows.filter((r) => r.qualityStatus === "below_standard");
 
     // Stable sort: keep original index as final tiebreak
@@ -429,7 +437,7 @@ export default function ApplicationsClient() {
 
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", userSelect: "none" }}>
           <input type="checkbox" checked={needsCalOnly} onChange={(e) => setNeedsCalOnly(e.target.checked)} />
-          <span>Needs calibration</span>
+          <span>Needs calibration (not yet reviewed)</span>
           <span title="Any criterion with max−min ≥ 2" style={{ color: "var(--text-faint)", fontSize: 11 }}>
             (≥2)
           </span>
@@ -582,11 +590,11 @@ export default function ApplicationsClient() {
                       style={{
                         cursor: "pointer",
                         borderBottom: "1px solid var(--border)",
-                        background: row.needsCalibration ? "color-mix(in srgb, var(--warn-soft) 55%, transparent)" : "transparent",
+                        background: row.needsCalibration && !row.calibrationReviewed ? "color-mix(in srgb, var(--warn-soft) 55%, transparent)" : "transparent",
                       }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLTableRowElement).style.background = "var(--surface-sunk)")}
                       onMouseLeave={(e) =>
-                        ((e.currentTarget as HTMLTableRowElement).style.background = row.needsCalibration
+                        ((e.currentTarget as HTMLTableRowElement).style.background = row.needsCalibration && !row.calibrationReviewed
                           ? "color-mix(in srgb, var(--warn-soft) 55%, transparent)"
                           : "transparent")
                       }

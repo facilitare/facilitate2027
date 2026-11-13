@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import ProgressPanel from "./progress-panel";
 
 type Evaluator = {
   id: string;
@@ -151,6 +152,8 @@ export default function EvaluatorsClient() {
 
       {msg && <div style={{ marginTop: 14, background: "var(--score-2-soft)", border: "1px solid var(--score-2)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--score-2)" }}>{msg}</div>}
       {error && <div style={{ marginTop: 14, background: "var(--danger-soft)", border: "1px solid var(--danger)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--danger)" }}>{error} <button onClick={() => setError(null)} style={{ marginLeft: 8, fontSize: 11, border: "1px solid var(--border)", borderRadius: 6, padding: "2px 6px", background: "var(--surface)" }}>Dismiss</button></div>}
+
+      <ProgressPanel />
 
       {/* Add form */}
       <form onSubmit={handleAdd} style={{ marginTop: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16, display: "grid", gap: 12 }}>

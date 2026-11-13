@@ -3,11 +3,15 @@ import { useState, useMemo, useCallback } from "react";
 import { computeAggregates, formatMeanForDisplay, type ScoringAssessment } from "@/lib/scoring";
 import { buildAggregatedFeedback, CRITERION_LABELS } from "@/lib/feedback";
 import { buildApplicantEmail, emailKindFor, type EmailKind } from "@/lib/applicant-email";
+import { decisionLabel } from "@/lib/decision-labels";
 import { ThemeBadge } from "@/components/ui/theme-badge";
 import { Chip } from "@/components/ui/chip";
 
 type Application = {
   id: string;
+  calibration_reviewed_at?: string | null;
+  calibration_reviewed_by_name?: string | null;
+  calibration_note?: string | null;
   ref_code: string;
   wave_id: string;
   wave_name?: string | null;
@@ -97,11 +101,11 @@ type PanelDecision = {
 };
 
 const DECISIONS = [
-  { value: "accept", label: "Accept" },
-  { value: "decline", label: "Decline" },
-  { value: "defer", label: "Defer" },
-  { value: "standby", label: "Standby" },
-  { value: "reserve", label: "Reserve" },
+  { value: "accept", label: decisionLabel("accept") },
+  { value: "decline", label: decisionLabel("decline") },
+  { value: "defer", label: decisionLabel("defer") },
+  { value: "standby", label: decisionLabel("standby") },
+  { value: "reserve", label: decisionLabel("reserve") },
 ] as const;
 
 function fmt(v: number | null): string {
@@ -180,6 +184,58 @@ function IafCorrection({ app }: { app: Application }) {
       <div style={{ display: "flex", gap: 8 }}>
         <button type="button" disabled={!valid} onClick={save} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: "var(--accent)", color: "#fff", fontSize: 13, cursor: valid ? "pointer" : "not-allowed", opacity: valid ? 1 : 0.5 }}>{busy ? "Saving…" : "Save correction"}</button>
         <button type="button" onClick={() => setOpen(false)} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function CalibrationReview({ app, needsCalibration }: { app: Application; needsCalibration: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const reviewed = !!app.calibration_reviewed_at;
+  if (!needsCalibration && !reviewed) return null;
+
+  const call = async (method: "POST" | "DELETE") => {
+    setBusy(true); setErr(null);
+    try {
+      const res = await fetch(`/api/applications/${app.id}/calibration-review`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: method === "POST" ? JSON.stringify({ note }) : undefined,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setErr(json.error ?? `Failed (${res.status})`); return; }
+      window.location.reload();
+    } catch (e: any) {
+      setErr(e?.message ?? "Network error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (reviewed) {
+    return (
+      <div style={{ marginTop: 6, fontSize: 12, color: "var(--score-2)" }}>
+        ✓ Calibration reviewed by {app.calibration_reviewed_by_name ?? "a lead"}{app.calibration_reviewed_at ? ` · ${new Date(app.calibration_reviewed_at).toLocaleDateString()}` : ""}
+        {app.calibration_note ? <div style={{ color: "var(--text-muted)", marginTop: 2 }}>“{app.calibration_note}”</div> : null}
+        <button type="button" disabled={busy} onClick={() => call("DELETE")} style={{ marginTop: 4, background: "none", border: "none", padding: 0, color: "var(--accent)", cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>{busy ? "…" : "Undo"}</button>
+        {err ? <span style={{ color: "var(--score-0)", marginLeft: 8 }}>{err}</span> : null}
+      </div>
+    );
+  }
+  if (!open) {
+    return <button type="button" onClick={() => setOpen(true)} style={{ marginTop: 6, background: "none", border: "none", padding: 0, color: "var(--accent)", cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>Mark calibration as reviewed</button>;
+  }
+  const valid = note.trim().length >= 10 && !busy;
+  return (
+    <div style={{ marginTop: 8, display: "grid", gap: 6, maxWidth: 420 }}>
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note, e.g. Discussed by panel; scores stand (≥10 characters)" style={{ padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13, background: "var(--surface)", color: "var(--text)" }} />
+      {err ? <div style={{ fontSize: 12, color: "var(--score-0)" }}>{err}</div> : null}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" disabled={!valid} onClick={() => call("POST")} style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: "var(--accent)", color: "#fff", fontSize: 12, cursor: valid ? "pointer" : "not-allowed", opacity: valid ? 1 : 0.5 }}>{busy ? "Saving…" : "Mark reviewed"}</button>
+        <button type="button" onClick={() => setOpen(false)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
       </div>
     </div>
   );
@@ -333,6 +389,7 @@ export default function DetailClient({
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
             n={aggregates.n} · divergence {fmt(aggregates.divergence)} {aggregates.needsCalibration ? "· needs calibration" : ""} {aggregates.highDivergence ? "· high divergence on focus" : ""}
           </div>
+          <CalibrationReview app={app} needsCalibration={aggregates.needsCalibration} />
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "8px 10px", background: "var(--surface-sunk)", minWidth: 110 }}>
@@ -602,7 +659,7 @@ export default function DetailClient({
             {decisions.map((d) => (
               <div key={d.id} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 10, background: "var(--surface-sunk)", fontSize: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                  <strong style={{ textTransform: "capitalize" }}>{d.decision}</strong>
+                  <strong>{decisionLabel(d.decision)}</strong>
                   <span style={{ color: "var(--text-muted)" }}>{new Date(d.decided_at).toLocaleString()} {d.decided_by_name ? `· by ${d.decided_by_name}` : ""}</span>
                 </div>
                 <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}><strong>Rationale:</strong> {d.rationale ?? "—"}</div>

@@ -105,7 +105,7 @@ export async function GET(req: Request) {
   // but still support server-side query narrowing semantics.
   const appRows = (await sql`
     select
-      id, wave_id, ref_code, q11_theme, status, iaf_standing
+      id, wave_id, ref_code, q11_theme, status, iaf_standing, calibration_reviewed_at
     from applications
     order by ref_code asc
   `) as any[];
@@ -204,6 +204,7 @@ export async function GET(req: Request) {
     normalised_total: number | null;
     divergence: number | null;
     needsCalibration: boolean;
+    calibrationReviewed: boolean;
     qualityStatus: string;
     range_focus: number | null;
     range_content: number | null;
@@ -252,6 +253,7 @@ export async function GET(req: Request) {
       normalised_total: normalised,
       divergence: agg.divergence,
       needsCalibration: agg.needsCalibration,
+      calibrationReviewed: !!app.calibration_reviewed_at,
       qualityStatus: agg.qualityStatus,
       range_focus: agg.range_focus,
       range_content: agg.range_content,

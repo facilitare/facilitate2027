@@ -47,6 +47,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       session_title, theme_reason, q10_delivery_other, cofacil_reason, large_group_experience, inclusive_design,
       q1_email, q2_ticket_status, q3_availability, q20_full_name, q21_bio, q22_headshot_url, q23_cofacilitators, q24_region, q25_ethnicity, q26_career_stage, q27_under_35, q28_gender,
       iaf_standing, anonymity_flag, anonymity_notes, redacted_q7, redacted_q7b, redacted_q16, redacted_q19, redacted_by, redacted_at,
+      calibration_reviewed_by, calibration_reviewed_at, calibration_note,
       created_at, updated_at
     from applications
     where id = ${id}
@@ -69,7 +70,14 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
     if (w.length) waveName = w[0].name;
   } catch { /* ignore */ }
 
-  const app = { ...appRow, wave_name: waveName };
+  let calibrationReviewedByName: string | null = null;
+  if (appRow.calibration_reviewed_by) {
+    try {
+      const r = (await sql`select name from evaluators where id = ${appRow.calibration_reviewed_by} limit 1`) as any[];
+      calibrationReviewedByName = r[0]?.name ?? null;
+    } catch { /* ignore */ }
+  }
+  const app = { ...appRow, wave_name: waveName, calibration_reviewed_by_name: calibrationReviewedByName };
 
   // Settings for mode label (every total must state mode)
   let iafBonusMode: "additive" | "tiebreak" = "additive";
