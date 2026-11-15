@@ -221,6 +221,7 @@ export async function GET(req: Request) {
   for (const r of allAssessments) {
     const c = countsByApp.get(r.application_id);
     if (!c) continue;
+    if (r.state === "recused") continue; // recused rows were reallocated; don't count them in "n/4"
     c.total += 1;
     if (r.state === "submitted") c.submitted += 1;
   }

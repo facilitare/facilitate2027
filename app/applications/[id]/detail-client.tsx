@@ -499,7 +499,7 @@ export default function DetailClient({
       {/* Every assessment — lead sees all */}
       <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 16 }}>
         <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", margin: 0 }}>
-          Assessments — {assessments.length} total, {submitted.length} submitted
+          Assessments — {assessments.filter((a: any) => a.state !== "recused").length} total, {submitted.length} submitted
         </h2>
         {assessments.length === 0 ? (
           <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 12 }}>No assessments yet. Assign evaluators to this application.</p>
