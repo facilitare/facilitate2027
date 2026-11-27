@@ -18,6 +18,8 @@ type ApiResponse = {
 
 type ColumnKey = "selected" | "reserve" | "not_selected";
 
+type ScoreRow = { id: string; normalised_total: number | null; submittedCount: number; totalAssessments: number };
+
 const THEME_COLOR: Record<string, string> = {
   craft: "var(--craft)",
   clarity: "var(--clarity)",
@@ -264,6 +266,7 @@ function Card({
 export default function PanelClient() {
   const [apps, setApps] = useState<BalanceApp[] | null>(null);
   const [settings, setSettings] = useState<BalanceSettings | null>(null);
+  const [scores, setScores] = useState<Record<string, ScoreRow>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -282,6 +285,14 @@ export default function PanelClient() {
       const j: ApiResponse = await res.json();
       setApps(j.applications);
       setSettings(j.settings);
+      // Scores come from the ranking API so both screens always show the same number.
+      // A failure here only hides the scores; the balance still loads.
+      fetch("/api/applications", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((r) => {
+          if (r) setScores(Object.fromEntries(r.applications.map((a: ScoreRow) => [a.id, a])));
+        })
+        .catch(() => {});
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -859,6 +870,12 @@ export default function PanelClient() {
                             {a.q11_theme ?? "—"}
                           </span>
                         </div>
+                        {scores[a.id] ? (
+                          <div style={{ fontSize: 12, marginTop: 6, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+                            Normalised <strong style={{ color: "var(--text)" }}>{scores[a.id].normalised_total?.toFixed(1) ?? "—"}</strong>
+                            {" "}· {scores[a.id].submittedCount}/{scores[a.id].totalAssessments} assessed
+                          </div>
+                        ) : null}
                         <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
                           {col.key !== "selected" ? (
                             <button

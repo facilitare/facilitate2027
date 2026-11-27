@@ -109,6 +109,7 @@ export async function GET(req: Request) {
         q24_region, q27_under_35, q11_theme, q8_group_setup,
         q10_delivery_mode, q26_career_stage, q25_ethnicity, q28_gender
       from applications
+      where status <> 'withdrawn'
       order by ref_code asc
     `) as any[];
   } catch (e: any) {
@@ -197,6 +198,9 @@ export async function POST(req: Request) {
   }
   const app = existing[0] as { id: string; status: string; ref_code: string };
   const prevStatus = app.status;
+  if (prevStatus === "withdrawn") {
+    return Response.json({ error: "This application was withdrawn by the applicant", code: "withdrawn" }, { status: 409 });
+  }
 
   // Map column -> status
   // selected: accepted, reserve: standby, not_selected: declined

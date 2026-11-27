@@ -448,6 +448,21 @@ function PanelLinks() {
           Programme balance
         </a>
         <a
+          href="/admin/evaluators"
+          style={{
+            fontSize: 13,
+            fontWeight: 500,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: "7px 12px",
+            textDecoration: "none",
+            color: "var(--text)",
+          }}
+        >
+          Assessor progress
+        </a>
+        <a
           href="/admin/import"
           style={{
             fontSize: 13,
